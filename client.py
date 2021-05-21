@@ -204,8 +204,9 @@ class StructA1(BaseZhou):
     
     def to_string(self,attr=0):
         if attr:
-            return "  年  月  日  时  分  秒   毫秒   resolution  x   y   z"
-        data = " %3d %3d %3d %3d %3d %3d %5d %8d %8d %3d %3d"%(self.time[0],self.time[1],self.time[2],self.time[3],self.time[4],self.time[5],self.m_second,self.out_resolution,self.out_x,self.out_y,self.out_z)
+            return "  年  月  日  时  分  秒   毫秒   resolution  x     y     z"
+        data = " %3d %3d %3d %3d %3d %3d %5d %8d %8.2f %6.2f %6.2f"%(self.time[0],self.time[1],self.time[2],self.time[3],self.time[4],self.time[5],self.m_second,self.out_resolution,\
+                self.get_accelerate("x"),self.get_accelerate("y"),self.get_accelerate("z"))
         return data
         
 class StructC1(BaseZhou):
@@ -237,7 +238,7 @@ class StructC1(BaseZhou):
         if attr:
             return "event type  年  月  日  时  分  秒  毫秒   temp   pitch  row    yaw   aacx aacy  aacz  gyrox  gyroy  gyroz"
         data="%10d %3d %3d %3d %3d %3d %3d %5d"\
-            "%7d %6.2f %6.2f %6.2f %4d %4d %4d %6d %6d %6d"%(self.event_type,self.time[0],self.time[1],self.time[2],self.time[3],self.time[4],self.time[5],self.m_second,\
+            "%7d %6.2f %6.2f %6.2f %5.2f %5.2f %5.2f %6d %6d %6d"%(self.event_type,self.time[0],self.time[1],self.time[2],self.time[3],self.time[4],self.time[5],self.m_second,\
             self.temp,self.pitch,self.roll,self.yaw,self.aacx,self.aacy,self.aacz,self.gyrox,self.gyroy,self.gyroz)
         return data
         
@@ -245,8 +246,8 @@ class StructC2():
     def __init__(self,data,curlen):
         self.alarm_flag = to_uint(data[0:4],4)
         self.satellite_status = to_uint(data[4:8],4)
-        self.latitude = to_uint(data[8:12],4)
-        self.longitude = to_uint(data[12:16],4)
+        self.latitude = to_uint(data[8:12],4)/1000000
+        self.longitude = to_uint(data[12:16],4)/1000000
         self.hight = to_uint(data[16:18],2)
         self.speed = to_uint(data[18:20],2)
         self.directory = to_uint(data[20:22],2)
@@ -258,7 +259,7 @@ class StructC2():
     def to_string(self,attr=0):
         if attr:
             return "alarm_flag Satellite_status       latitude  longitude      hight speed     direction    年   月   日   时   分   秒"
-        data = "%10d %12d %18d %10d %8d %8d %10d""%8d %4d %4d %4d %4d %4d"%(self.alarm_flag,self.satellite_status,self.latitude,self.longitude,self.hight,self.speed,self.directory,\
+        data = "%10d %12d %18.2f %10.2f %8d %8d %10d""%8d %4d %4d %4d %4d %4d"%(self.alarm_flag,self.satellite_status,self.latitude,self.longitude,self.hight,self.speed,self.directory,\
                     self.utc_time[0],self.utc_time[1],self.utc_time[2],self.utc_time[3],self.utc_time[4],self.utc_time[5])
         return data
      
