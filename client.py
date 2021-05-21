@@ -365,12 +365,18 @@ def read_log(filepath):
         structlen = (to_uint(totaldata[curlen+2:curlen+4],2) &0x3fff)//structnumbers
         devicecount+=1      
         # print("%d type:0x%x cur:0x%x"%(devicecount,structtype,curlen),"structnumber:",structnumbers,"structlen:",structlen)
-                
+        
         for i in range(0,structnumbers):
             if curlen +4 +i*(structlen+1) >= totallen:
                 break
                 
             dev = LogDevice(structtype,structlen,totaldata[curlen+4+i*structlen:curlen+4+i*structlen+structlen],curlen+4+i*structlen)
+            
+            if structtype == 0:
+                print("read packet at 0x%x 0 data filled break"%curlen)
+                curlen = totallen                
+                break
+                
             if dev.is_ok():                
                 devices.append(dev)
             else:
