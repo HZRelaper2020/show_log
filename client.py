@@ -232,12 +232,12 @@ class StructC1(BaseZhou):
         self.pitch = to_float(data[12:16],4)
         self.roll = to_float(data[16:20],4)
         self.yaw = to_float(data[20:24],4)
-        self.aacx = to_int(data[24:26],2)
-        self.aacy = to_int(data[26:28],2)
-        self.aacz = to_int(data[28:30],2)
-        self.gyrox = to_int(data[30:32],2)
-        self.gyroy = to_int(data[32:34],2)
-        self.gyroz = to_int(data[34:36],2)
+        self.aacx = to_int(data[24:26],2)/2048
+        self.aacy = to_int(data[26:28],2)/2048
+        self.aacz = to_int(data[28:30],2)/2048
+        self.gyrox = to_int(data[30:32],2)/2000
+        self.gyroy = to_int(data[32:34],2)/2000
+        self.gyroz = to_int(data[34:36],2)/2000
     
     def get_mtime(self):
         return self.time[3]*3600*1000 + self.time[4]*60*1000 + self.time[5]*1000+ self.m_second
