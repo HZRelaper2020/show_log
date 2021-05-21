@@ -6,6 +6,6 @@
 
 <p>安装python<p>
  &nbsp;&nbsp;&nbsp;&nbsp;官网下载 https://www.python.org/<br/> 
-  &nbsp;&nbsp;&nbsp;&nbsp;安装好之后，安装需要的库 <br/>
+  &nbsp;&nbsp;&nbsp;&nbsp;安装好之后，安装需要的库，打开命令行输入如下 <br/>
   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;py -m pip install matplotlib<br/>
   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;py -m pip install numpy<br/>
