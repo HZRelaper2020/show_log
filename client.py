@@ -84,8 +84,10 @@ def plot_a1(filename):
     plt.title("3轴")
     plt.xlabel("时间")
     plt.ylabel("单位")
-    plt.xticks(np.arange(1, 2000, 1000))
     
+    # plt.xticks(np.arange(1, 2000, 1000))
+    # plt.yticks(np.arange(-100, 100, 3))
+    plt.ylim(-100,100)
     
     data = read_data(filename,0xa1)
     
@@ -138,19 +140,28 @@ def to_uint(data,bytecount):
         ret += data[i] << i*8        
     return ret
 
-def to_int(data,bytecount):    
-    ret = 0
-    if bytecount ==1:
-        ret = data[0]
-        if (ret > 127):
-            ret= -(~ret + 1 &0xff)
+def to_int(data,bytecount):
+    flag = ""
+    if bytecount == 1:
+        flag = "b"
     elif bytecount == 2:
-        ret = data[1]<<8 + data[0]
-        if ret >= 0x1000:
-            ret= -(~ret + 1 &0xff)
-    else:
-        print("not supported",bytecount)
-        exit(0)
+        flag = "h"
+    elif bytecount == 4:
+        flag = "i"    
+    
+    return struct.unpack(flag,data)[0]
+    ret = 0
+    # if bytecount ==1:
+        # ret = data[0]
+        # if (ret > 127):
+            # ret= -(~ret + 1 &0xff)
+    # elif bytecount == 2:
+        # ret = data[1]<<8 + data[0]
+        # if ret >= 0x1000:
+            # ret= -(~ret + 1 &0xffff)
+    # else:
+        # print("not supported",bytecount)
+        # exit(0)
     return ret
 
 def to_float(data,bytecount):
@@ -236,7 +247,7 @@ class StructC1(BaseZhou):
        
     def to_string(self,attr=0):
         if attr:
-            return "event type  年  月  日  时  分  秒  毫秒   temp   pitch  row    yaw   aacx aacy  aacz  gyrox  gyroy  gyroz"
+            return "event type  年  月  日  时  分  秒  毫秒   temp   pitch  row    yaw  aacx    aacy    aacz     gyrox  gyroy  gyroz"
         data="%10d %3d %3d %3d %3d %3d %3d %5d"\
             "%7d %6.2f %6.2f %6.2f %5.2f %5.2f %5.2f %6d %6d %6d"%(self.event_type,self.time[0],self.time[1],self.time[2],self.time[3],self.time[4],self.time[5],self.m_second,\
             self.temp,self.pitch,self.roll,self.yaw,self.aacx,self.aacy,self.aacz,self.gyrox,self.gyroy,self.gyroz)
