@@ -18,15 +18,15 @@ static int Jtt808FillOtherAttributes(jtt808_t* jtt)
 	
 	header->protocolVersion=1;
 	header->terminalMobile[0] = 0x17;
-	header->terminalMobile[0] = 0x31;
-	header->terminalMobile[0] = 0x84;
-	header->terminalMobile[0] = 0x53;
-	header->terminalMobile[0] = 0x26;
-	header->terminalMobile[0] = 0x80;
-	header->terminalMobile[0] = 0x0;
-	header->terminalMobile[0] = 0x0;
-	header->terminalMobile[0] = 0x0;
-	header->terminalMobile[0] = 0x0;
+	header->terminalMobile[1] = 0x31;
+	header->terminalMobile[2] = 0x84;
+	header->terminalMobile[3] = 0x53;
+	header->terminalMobile[4] = 0x26;
+	header->terminalMobile[5] = 0x80;
+	header->terminalMobile[6] = 0x0;
+	header->terminalMobile[7] = 0x0;
+	header->terminalMobile[8] = 0x0;
+	header->terminalMobile[9] = 0x0;
 
 	msgBodyProperty->reserved = 0;
 	msgBodyProperty->versionIdentify = 0x1;
@@ -40,11 +40,9 @@ static int Jtt808FillOtherAttributes(jtt808_t* jtt)
 	return 0;
 }
 
-static int Jtt808ConvertNetStream(jtt808_t* jtt)
+static int Jtt808HeaderConvertNetStream(jtt808header_t* header)
 {
-#ifdef BIGENDIAN
-#else
-	jtt808header_t* header = &jtt->header;
+#ifndef BIGENDIAN
 	header->msgId = htons(header->msgId);
 	header->flowId = htons(header->flowId);
 
@@ -54,6 +52,11 @@ static int Jtt808ConvertNetStream(jtt808_t* jtt)
 	}
 #endif
 	return 0;
+}
+static int Jtt808ConvertNetStream(jtt808_t* jtt)
+{
+	jtt808header_t* header = &jtt->header;
+	return Jtt808HeaderConvertNetStream(header);
 }
 
 /*
@@ -114,6 +117,81 @@ static int Jtt808ReplyConvertNetStream(jtt808CommonReply_t* reply)
 	return 0;
 }
 
+static int Jtt808RecvOnePacketSub(jtt808handle_t* handle,jtt808header_t* header,uint8_t* payload,int* payloadSize)
+{
+	uint8_t recvbuf[2];
+	uint8_t recvsize = 0;
+
+	int retry = 0;
+	int sk = handle->sk;
+
+	while(retry < handle-><pre>maxRecvRetryTimes){
+		retry += 1;
+		int recvsuccess = 0;
+		int times = 0;
+
+		int curRecvSize = 0;
+		int curRecvBuf[1514];
+		// recv until 0x7e
+		while(1){
+			times += 1;
+			if (times > 1516/2)
+				break
+
+			recvsize = recv(sk,recvbuf,2,0);
+			int preok = 0;	
+
+			if (recvsize != 2){
+				perror("recv");
+				ERROR(("recvsize != 2"));
+				break;
+			}
+
+			if (recvbuf[1] == 0x7e){
+				curRecvSize = 0;
+				recvsuccess = 1;
+				break;
+			}else if (recvbuf[0] == 0x7e){
+				curRecvSize = 1;
+				curRecvBuf[0] = recvbuf[1];
+				recvsuccess = 1;
+				break;
+			}
+
+		}
+
+		// recv until end
+		if (recvsuccess){
+			recvsuccess = 0;
+			times = 0;
+			while (1){
+				times += 1;
+				if (times > 1514)
+					break;	
+				recvsize = recv(sk,recvbuf,1);
+				if (recvsize <= 0){
+					perror("recv");
+					ERROR(("recv size <=0"));
+					break;
+				}
+
+				if (recvbuf[0] == 0x7e){
+					recvsuccess = 1;
+					break;
+				}
+				curRecvBuf[curRecvSize++] = recvbuf[0];
+			}
+		}
+
+		
+	}
+
+	//					handle->token.len = strlen(reply->authorCode);
+	//					memcpy(handle->token.payload,reply->authorCode,handle->token.len);
+
+	return 0;
+}
+
 static int Jtt808RecvReply(jtt808handle_t* handle,jtt808_t* jtt)
 {
 	jtt808header_t* header = &jtt->header;
@@ -124,32 +202,6 @@ static int Jtt808RecvReply(jtt808handle_t* handle,jtt808_t* jtt)
 	uint8_t recvbuf[500];
 	const uint16_t flowId = header->flowId;
 
-	while(retry < handle->maxRecvRetryTimes){
-		memset(recvbuf,0,sizeof(recvbuf));
-		int recvsize = recv(sk,recvbuf,sizeof(recvbuf),0);
-		jtt808CommonReply_t* reply = (jtt808CommonReply_t*)recvbuf;
-		Jtt808ReplyConvertNetStream(reply);
-
-		if (recvsize > 7 && reply->flowId == flowId){
-			switch(header->msgId){
-				case JTT808_MSGID_REGISTER: // register
-					ret = reply->result;
-					if (!ret){
-						handle->token.len = strlen(reply->authorCode);
-						memcpy(handle->token.payload,reply->authorCode,handle->token.len);
-					}else{
-						PRINTF("register result error:0x%x\n",reply->result);
-					}
-					break;
-			}
-		}
-
-
-		if (ret >= 0)
-			break;
-
-		retry++;
-	}
 
 	return ret;
 
@@ -218,7 +270,7 @@ static int Jtt808SendPacket(jtt808handle_t* handle,const uint16_t msgId,uint8_t*
 
 			uint8_t headerBuf[22*2];
 			int headerSize = 0;
-			Jtt808Replace0x7eAnd0x7d((uint8_t*)header,subItemCount>1?24:20,headerBuf,&headerSize); // msg header is ok
+			Jtt808Replace0x7eAnd0x7d((uint8_t*)header,subItemCount>1?21:17,headerBuf,&headerSize); // msg header is ok
 			
 			// check sum
 			uint8_t checkSum ;
@@ -250,12 +302,12 @@ static int Jtt808SendPacket(jtt808handle_t* handle,const uint16_t msgId,uint8_t*
 
 
 			int curSendSize = send(sk,totSendBuf,totSendSize,0);
-#if 1
-			printf("totsendsize:%d\n",totSendSize);
+#if JTT808_DEBUG_SEND_MSG
+			PRINT(("totsendsize:%d\n",totSendSize));
 			for (int i=0;i<totSendSize;i++){
-				printf("%02x ",totSendBuf[i]);
-				if (i%16 == 15) printf("\n");
-			} printf("\n");
+				PRINT(("%02x ",totSendBuf[i]));
+				if (i%16 == 15) PRINT(("\n"));
+			} PRINT(("\n"));
 #endif
 			
 			if (curSendSize != totSendSize){

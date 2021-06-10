@@ -12,12 +12,18 @@
 #include <signal.h>
 #include <poll.h>
 
+// for test
+#define JTT808_TEST_IP "192.168.5.7"
+#define JTT808_TEST_PORT 5555
 // for debug
-#define ERROR(arg) printf arg
-#define PRINTF printf
+#define ERROR(arg) do{printf arg ;printf("\n");}while(0);
+#define PRINT(arg) printf arg
+#define JTT808_DEBUG_SEND_MSG 1
 
 //#define BIGENDIAN
 //#define ARMGCC   // for arm
+
+#define JTT808_CHECK_RECV_CHECKSUM 1
 
 #define MAX_JTT808_SEND_RETRY_TIMES 3
 #define MAX_JTT808_RECV_RETRY_TIMES 3
@@ -26,6 +32,16 @@
 
 
 #define JTT808_MSGID_REGISTER 0x100 
+
+
+
+typedef enum jtt808error_t{
+	JTT808_ERROR_OK = 0,
+	JTT808_ERROR_POLL_RECV,
+	JTT808_ERROR_POLL_RECV_TIMEO,
+	JTT808_ERROR_RECV,
+}jtt808error_t;
+
 
 typedef struct jtt808MsgBodyProperty{
 #ifdef BIGENDIAN
@@ -50,7 +66,7 @@ typedef struct jtt808MsgPkgItem{
 
 typedef struct jtt808header{
         uint16_t msgId;
-        jtt808MsgBodyProperty_t msgBodyProperty;
+	jtt808MsgBodyProperty_t msgBodyProperty;
         uint8_t protocolVersion;
         uint8_t terminalMobile[10]; // BCD code
         uint16_t flowId;
@@ -79,6 +95,10 @@ typedef struct jtt808handle{
 
 	uint16_t maxSendRetryTimes;
 	uint16_t maxRecvRetryTimes;
+
+	int (*send)(struct jtt808handle* handle,uint8_t* data,int size);
+	int (*recv)(struct jtt808handle* handle,uint8_t* data,int size);
+
 }jtt808handle_t;
 
 typedef struct jtt808Register{
@@ -97,4 +117,13 @@ typedef struct jtt808CommonReply{
 	uint8_t result;
 	uint8_t* authorCode;
 }jtt808CommonReply_t;
+
+
+static inline void jtt808_print_data(uint8_t* data,uint16_t size)
+{
+        for (int i=0;i<size;i++){
+                PRINT(("%02x ",data[i]));
+                if (i%16 == 15) PRINT(("\n"));
+        }
+}
 #endif
