@@ -13,10 +13,8 @@
 #include <poll.h>
 
 // for debug
-#define ERROR(arg) do {printf arg ;printf("\n");} while(0)
-#define PRINT(arg) printf arg
-
-#define JT808_DEBUG_SEND_PACKET
+#define ERROR(arg) printf arg
+#define PRINTF printf
 
 //#define BIGENDIAN
 //#define ARMGCC   // for arm
@@ -25,14 +23,9 @@
 #define MAX_JTT808_RECV_RETRY_TIMES 3
 #define MAX_JTT808_SEND_POLL_TIME 1000 // ms
 #define MAX_JTT808_RECV_POLL_TIME 1000 // ms
-#define JTT808_DO_CHECKSUM 1 // checksum
 
 
-#define JTT808_MSGID_REGISTER 0x0100 
-
-
-#define JTT808_MSGID_REPLY_REGISTER 0x8100
-
+#define JTT808_MSGID_REGISTER 0x100 
 
 typedef struct jtt808MsgBodyProperty{
 #ifdef BIGENDIAN
@@ -102,6 +95,6 @@ typedef struct jtt808Register{
 typedef struct jtt808CommonReply{
 	uint16_t flowId;
 	uint8_t result;
-	uint8_t authorCode[200];
+	uint8_t* authorCode;
 }jtt808CommonReply_t;
 #endif
