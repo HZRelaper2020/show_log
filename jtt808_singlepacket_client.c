@@ -2,43 +2,11 @@
 #include "jtt808_common.h"
 #include "jtt808_netutil.h"
 #include "jtt808_convert.h"
+#include "jtt808_singlepacket_client.h"
 
-#define TEST_RECV_SUBPACKET 1
+//#define TEST_RECV_PACKET 			0
+//#define TEST_SEND_PACKET 			0
 
-
-/*
- *
- * translate 0x7d 0x01 to 0x7d
- * translate 0x7d 0x02 to 0x7e
- *@return translate count
- */
-static int JTT808Decode0x7d01And0x7d02(uint8_t* inbuf,int insize,uint8_t* outbuf,int* outsize)
-{
-	int count = 0;
-	int outi  =0;
-	for (int i=0;i<insize-1;i++){
-		uint8_t c1 = *(inbuf+i+0);
-		uint8_t c2 = *(inbuf+i+1);
-		if (c1 == 0x7d && c2 == 0x01){
-			i += 1;
-			count +=1;
-			if (outbuf)
-				outbuf[outi++] = 0x7d;
-		}else if (c1 == 0x7d && c2 == 0x02){
-			i += 1;
-			count +=1;
-			if (outbuf)
-				outbuf[outi++] = 0x7e;
-		}else{
-			if (outbuf)
-				outbuf[outi++] = c1;
-		}
-	}
-	outbuf[outi++] = *(inbuf+insize -1);
-
-	*outsize = insize - count;
-	return count;
-}
 /*
  * receive data until get 0x7e  not include 0x7e
  * @return  0:success  other:failed
@@ -106,7 +74,7 @@ static int Jtt808RecvOneSubPacket(jtt808handle_t* handle,uint8_t* msg,int* msgLe
 	}
 
 	if (hasPacket){
-#if TEST_RECV_SUBPACKET
+#if TEST_RECV_PACKET
 		PRINT(("recv raw data\n"));
 		jtt808_print_data(recvbuf,recvsize);
 		PRINT(("\n\n"));
@@ -114,7 +82,7 @@ static int Jtt808RecvOneSubPacket(jtt808handle_t* handle,uint8_t* msg,int* msgLe
 		JTT808Decode0x7d01And0x7d02(recvbuf,recvsize,msg,msgLen);	
 		recvsize = *msgLen;
 		memcpy(recvbuf,msg,recvsize);
-#if TEST_RECV_SUBPACKET
+#if TEST_RECV_PACKET
 		PRINT(("after decode 0x7d01 and 0x7d02\n"));
 		jtt808_print_data(recvbuf,recvsize);
 		PRINT(("\n\n"));
@@ -147,10 +115,10 @@ static int Jtt808RecvOneSubPacket(jtt808handle_t* handle,uint8_t* msg,int* msgLe
 	if (hasPacket){
 		hasPacket = 0;
 		jtt808header_t header;
-                if (!JTT808ConvertRawDataToHeader(&header,recvbuf,recvsize)){
-			int calMsgLen = recvsize - (header.msgBodyProperty.hasSubPkg?4:0);
-			if (header.msgBodyProperty.msgLength != calMsgLen){
-				ERROR(("message length failed 0x%03x 0x%03x",header.msgBodyProperty.msgLength,calMsgLen));
+                if (!JTT808ConvertRawDataToHeader(recvbuf,recvsize,&header)){
+			int calMsgLen = recvsize - 17-(header.msgBodyProperty.attr.hasSubPkg?4:0);
+			if (header.msgBodyProperty.attr.msgLength != calMsgLen){
+				ERROR(("message length failed 0x%03x 0x%03x",header.msgBodyProperty.attr.msgLength,calMsgLen));
 			}else{
 				hasPacket = 1;
 			}
@@ -173,18 +141,21 @@ static int Jtt808RecvOneSubPacket(jtt808handle_t* handle,uint8_t* msg,int* msgLe
  */
 int Jtt808RecvOnePacket(jtt808handle_t* handle,uint8_t* data,int* datalen)
 {
-	uint8_t recvbuf[1514];
+	uint8_t recvbuf[1514*2];
 	int recvsize= 0;
 	
 	int hasPacket = 0;
 
 	if (Jtt808RecvOneSubPacket(handle,recvbuf,&recvsize)){
 		jtt808header_t header;
-		if (!JTT808ConvertRawDataToHeader(&header,recvbuf,recvsize)){
-			if (header.msgBodyProperty.hasSubPkg){
+		if (!JTT808ConvertRawDataToHeader(recvbuf,recvsize,&header)){
+
+			if (header.msgBodyProperty.attr.hasSubPkg){
 				// recv until last packet
-				if (recvsize >= 21){
-					if (header.msgPkgItem.pkgCount > 128){
+				if (recvsize >= 21 ){
+					if (header.msgPkgItem.pkgCount < 2){
+						ERROR(("pkgCount %d < 2",header.msgPkgItem.pkgCount));
+					}else if (header.msgPkgItem.pkgCount > 128){
 						ERROR(("pkgCount too long"));
 					}else if (header.msgPkgItem.pkgNumber != 1){
 						ERROR(("pkgNumber is not 1 %d",header.msgPkgItem.pkgNumber));
@@ -202,11 +173,11 @@ int Jtt808RecvOnePacket(jtt808handle_t* handle,uint8_t* data,int* datalen)
 						while(Jtt808RecvOneSubPacket(handle,recvbuf,&recvsize)){
 							pkgNumber += 1;
 							times +=1;
-							if (times >128)
+							if (times >pkgCount)
 								break;
 
-							if (!JTT808ConvertRawDataToHeader(&header,recvbuf,recvsize)){
-								ERROR(("convert data header failed"));
+							if (JTT808ConvertRawDataToHeader(recvbuf,recvsize,&header)){
+								ERROR(("convert data header failed recvsize:%d",recvsize));
 								break;
 							}
 
@@ -216,21 +187,21 @@ int Jtt808RecvOnePacket(jtt808handle_t* handle,uint8_t* data,int* datalen)
 							}else if (msgId != header.msgId){
 								ERROR(("msgId != header.msgId"));
 								break;
-							}else if (!header.msgBodyProperty.hasSubPkg){
+							}else if (!header.msgBodyProperty.attr.hasSubPkg){
 								ERROR(("!header.msgBodyProperty.hasSubPkg"));
 								break;
 							}else if (header.msgPkgItem.pkgNumber != pkgNumber){
-								ERROR(("header.msgPkgItem.pkgNumber != pkgNumber"));
+								ERROR(("header.msgPkgItem.pkgNumber != pkgNumber %x %x",header.msgPkgItem.pkgNumber,pkgNumber));
 								break;
 							}else if (header.msgPkgItem.pkgCount != pkgCount){
 								ERROR(("header.msgPkgItem.pkgCount != pkgCount"));
 								break;
 							}
 							
-							memcpy(data+curDataLen,recvbuf+22,recvsize-22);
-							curDataLen += recvsize-22;
+							memcpy(data+curDataLen,recvbuf+21,recvsize-21);
+							curDataLen += recvsize-21;
 
-							if (header.msgPkgItem.pkgCount == pkgCount){
+							if (header.msgPkgItem.pkgNumber == pkgCount){
 								hasPacket = 1;
 								*datalen = curDataLen;
 								break;
@@ -238,7 +209,7 @@ int Jtt808RecvOnePacket(jtt808handle_t* handle,uint8_t* data,int* datalen)
 						}
 					}
 				}
-			}else{
+			}else if (!header.msgBodyProperty.attr.hasSubPkg){
 				hasPacket = 1;
 				*datalen = recvsize;
 				memcpy(data,recvbuf,recvsize);
@@ -248,12 +219,8 @@ int Jtt808RecvOnePacket(jtt808handle_t* handle,uint8_t* data,int* datalen)
 	return hasPacket;
 }
 
-#if TEST_RECV_SUBPACKET
-int main()
+int Jtt808InitHandle(jtt808handle_t* handle)
 {
-	jtt808handle_t rawhandle;
-	jtt808handle_t* handle = & rawhandle;
-
 	memset(handle,0,sizeof(jtt808handle_t));
 
 	handle->pollRecvTime = MAX_JTT808_RECV_POLL_TIME;
@@ -261,6 +228,113 @@ int main()
 	
 	handle->send = Jtt808NetSend;
 	handle->recv = Jtt808NetRecv;
+
+	return 0;
+}
+
+
+/*
+ *
+ *
+ *@return 0:success
+ *
+ */
+static int Jtt808SendRawData(jtt808handle_t* handle,uint8_t* data,int size)
+{
+
+	uint8_t senddata[1514*2];
+	int sendsize = 0;
+	int ret = 0;
+
+	senddata[0] = 0x7e;
+	Jtt808Encode0x7eAnd0x7d(data,size,senddata+1,&sendsize);
+	senddata[sendsize+1] = 0x7e;
+
+	ret = -1;
+#if TEST_SEND_PACKET
+	PRINT(("send data %d\n",sendsize+2));
+	jtt808_print_data(senddata,sendsize+2);
+	PRINT(("\n\n"));
+#endif
+	if (handle->send(handle,senddata,sendsize+2) == sendsize+2){
+		ret = 0;
+	}
+	return ret;
+}
+/*
+ *
+ *
+ * @return 0:success
+ *
+ */
+int Jtt808SendPacket(jtt808handle_t* handle,jtt808header_t* argheader,uint8_t* payload,const int payloadSize)
+{
+	uint16_t msgId = argheader->msgId;
+	uint16_t flowId = argheader->flowId;
+	int ret = 0;
+
+	int remain = payloadSize;
+
+	uint8_t senddata[1514*2];
+	uint8_t tempbuf[1514];
+	int headerSize = 0;
+
+	jtt808header_t header;
+	jtt808header_t* h = & header;
+	memcpy(h,argheader,sizeof(jtt808header_t));
+
+
+	uint8_t multiPkg = payloadSize > 0x1ff ?1:0;
+
+	ret = -1;
+	uint16_t pkgNumber = 0;
+	const uint16_t pkgCount = (payloadSize + 0x1fe)/0x1ff;
+	while(remain > 0){
+		int sendSize = remain > 0x1ff ? 0x1ff:remain;
+		h->msgBodyProperty.attr.msgLength = sendSize;
+
+		if (multiPkg){
+			pkgNumber += 1;
+			h->msgBodyProperty.attr.hasSubPkg = 1;
+			h->msgPkgItem.pkgCount = pkgCount;
+			h->msgPkgItem.pkgNumber = pkgNumber;
+		}
+
+		Jtt808ConvertHeaderToRawData(h,tempbuf,&headerSize);
+		 
+
+		memcpy(senddata,tempbuf,headerSize);
+		memcpy(senddata+headerSize,payload+payloadSize-remain,sendSize);
+
+		remain -= sendSize;
+
+#if JTT808_DO_SEND_CHECKSUM
+		uint8_t checksum = 0;
+		for (int i =0;i<headerSize+sendSize;i++){
+			checksum ^= senddata[i];
+		}
+		senddata[headerSize+sendSize] = checksum;
+#endif
+		if (Jtt808SendRawData(handle,senddata,headerSize+sendSize+1)){
+			ERROR(("send raw data failed"));
+		}else{
+			if (remain ==0){
+				ret = 0;
+			}
+		}
+
+	}
+
+	return ret;
+}
+
+#if TEST_RECV_PACKET || TEST_SEND_PACKET
+int main()
+{
+	jtt808handle_t rawhandle;
+	jtt808handle_t* handle = & rawhandle;
+
+	Jtt808InitHandle(handle);
 
 	if (Jtt808CreteSocket(handle)){
 		return -1;
@@ -270,19 +344,48 @@ int main()
                 return -1;
         }
 
-	uint8_t recvbuf[1514];
+	uint8_t recvbuf[1514*12];
 	int recvsize = 0;
+	jtt808header_t rawheader;
+	jtt808header_t* header = & rawheader;
 
-	if (Jtt808RecvOnePacket(handle,recvbuf,&recvsize)){
-		PRINT(("recv size:%d\n",recvsize));
-		for (int i=0;i<recvsize;i++){
-			PRINT(("%02x ",recvbuf[i]));
-			if (i%16 == 15)
-				PRINT(("\n"));
+#if TEST_RECV_PACKET
+	for (int i=0;i<2;i++){
+		if (Jtt808RecvOnePacket(handle,recvbuf,&recvsize)){
+			PRINT(("recv success size:%d\n",recvsize));
+			jtt808_print_data(recvbuf,recvsize);
+			PRINT(("\n\n"));
 		}
-		PRINT(("\n\n"));
+	}
+#endif
+
+#if TEST_SEND_PACKET
+	memset(header,0,sizeof(*header));
+	header->msgId = 0x1234;
+	header->flowId = 0x5678;
+	header->protocolVersion = 0x1;
+	header->terminalMobile[0] = 0x17;
+	header->terminalMobile[9] = 0x68;
+
+	for (int i=0;i<sizeof(recvbuf);i++){
+		recvbuf[i] = 0x70+i;
 	}
 
+	if (Jtt808SendPacket(handle,header,recvbuf,100)){
+		return -1;
+	}
+
+	for (int i=0;i<sizeof(recvbuf);i++){
+		recvbuf[i] = 0x70+i;
+	}
+
+	if (Jtt808SendPacket(handle,header,recvbuf,sizeof(recvbuf)-100)){
+		return -1;
+	}
+
+	PRINT(("send successs\n"));
+#endif
 	return 0;
 }
+
 #endif

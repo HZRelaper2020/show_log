@@ -82,25 +82,48 @@ int Jtt808Connect(jtt808handle_t* handle,const uint8_t* ip,uint16_t port)
 	return ret;
 }
 
+/*
+ *
+ *
+ *@return send count, send < 0 when error
+ *
+ */
 int Jtt808NetSend(jtt808handle_t* handle,uint8_t* senddata,int sendsize)
 {
-        int ret = -1;
+	int totSize = 0;
 
-        ret = Jtt808PollReadOrWrite(handle,POLLOUT);
+	int times = 0;
+	while(1){
+		times += 1;
+		if (times > 0xff)
+			break;
 
-        if (ret == 0){
-                ret= send(handle->sk,senddata,sendsize,0);
-                if (ret < 0){
-                        perror("send");
-                        ERROR(("send failed"));
-                }
-        }else{
-		ret = 0;
+		int ret = Jtt808PollReadOrWrite(handle,POLLOUT);
+
+		if (ret == 0){
+			ret= send(handle->sk,senddata,sendsize,0);
+			if (ret < 0){
+				totSize = -1;
+				perror("send");
+				ERROR(("send failed"));
+				break;
+			}else{
+				totSize += ret;
+				if (totSize == sendsize)
+					break;
+			}
+		}
 	}
 
-        return ret;
+        return totSize; 
 }
 
+/*
+ *
+ *
+ *@return recv data count ,error return <0
+ *
+ */
 int Jtt808NetRecv(jtt808handle_t* handle,uint8_t* recvdata,int recvsize)
 {
         int ret = 0;
@@ -109,7 +132,7 @@ int Jtt808NetRecv(jtt808handle_t* handle,uint8_t* recvdata,int recvsize)
 
         if (ret == 0){
                 ret= recv(handle->sk,recvdata,recvsize,0);
-                if (ret <= 0){
+                if (ret < 0){
                         perror("recv");
                         ERROR(("recv failed"));
                 }

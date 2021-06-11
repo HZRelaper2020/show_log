@@ -16,24 +16,26 @@
 #define JTT808_TEST_IP "192.168.5.7"
 #define JTT808_TEST_PORT 5555
 // for debug
-#define ERROR(arg) do{printf arg ;printf("\n");}while(0);
+#define ERROR(arg) do{printf arg ;printf("\n");}while(0)
 #define PRINT(arg) printf arg
-#define JTT808_DEBUG_SEND_MSG 1
 
 //#define BIGENDIAN
 //#define ARMGCC   // for arm
 
-#define JTT808_CHECK_RECV_CHECKSUM 1
 
-#define MAX_JTT808_SEND_RETRY_TIMES 3
-#define MAX_JTT808_RECV_RETRY_TIMES 3
-#define MAX_JTT808_SEND_POLL_TIME 1000 // ms
-#define MAX_JTT808_RECV_POLL_TIME 1000 // ms
+#define JTT808_CHECK_RECV_CHECKSUM 			1  // if do checksum when receive
+#define JTT808_DO_SEND_CHECKSUM 			1 // if do checksum when send data
+
+#define MAX_JTT808_SEND_RETRY_TIMES 			3
+#define MAX_JTT808_RECV_RETRY_TIMES 			3
+#define MAX_JTT808_SEND_POLL_TIME 			1000 // ms
+#define MAX_JTT808_RECV_POLL_TIME 			1000 // ms
 
 
 #define JTT808_MSGID_REGISTER 0x100 
 
 
+#pragma pack(1)
 
 typedef enum jtt808error_t{
 	JTT808_ERROR_OK = 0,
@@ -44,19 +46,24 @@ typedef enum jtt808error_t{
 
 
 typedef struct jtt808MsgBodyProperty{
-#ifdef BIGENDIAN
-        uint16_t reserved:1;
-        uint16_t versionIdentify:1;
-        uint16_t hasSubPkg:1;
-        uint16_t encodeType:3;  // 10 bit 1:RSA
-        uint16_t msgLength:10; // msg length
+	union {
+		struct{
+#if BIGENDIAN
+			uint16_t reserved:1;
+			uint16_t versionIdentify:1;
+			uint16_t hasSubPkg:1;
+			uint16_t encodeType:3;  // 10 bit 1:RSA
+			uint16_t msgLength:10; // msg length
 #else
-        uint16_t msgLength:10; // msg length
-        uint16_t encodeType:3;  // 10 bit 1:RSA
-        uint16_t hasSubPkg:1;
-        uint16_t versionIdentify:1; //set 1
-        uint16_t reserved:1;
+			uint16_t msgLength:10; // msg length
+			uint16_t encodeType:3;  // 10 bit 1:RSA
+			uint16_t hasSubPkg:1;
+			uint16_t versionIdentify:1; //set 1
+			uint16_t reserved:1;
 #endif
+		} attr;
+		uint16_t value;
+	};
 }jtt808MsgBodyProperty_t;
 
 typedef struct jtt808MsgPkgItem{
@@ -119,11 +126,37 @@ typedef struct jtt808CommonReply{
 }jtt808CommonReply_t;
 
 
+#pragma pack()
+
 static inline void jtt808_print_data(uint8_t* data,uint16_t size)
 {
-        for (int i=0;i<size;i++){
-                PRINT(("%02x ",data[i]));
+	const uint8_t PrintMethod =2;
+	if (PrintMethod == 1){
+		for (int i=0;i<size;i++){
+			PRINT(("0x%02x ",data[i]));
                 if (i%16 == 15) PRINT(("\n"));
-        }
+		}
+	}else if (PrintMethod ==2){
+		for (int i=0;i<size;i++){
+			PRINT(("0x%02x,",data[i]));
+		} PRINT(("\n"));
+	}
 }
+
+static inline void jtt808_print_header(jtt808header_t* header)
+{
+	PRINT(("header struct\n"));
+	PRINT(("msgId:0x%04x\n",header->msgId));
+	PRINT(("msgProperty:0x%04x\n",header->msgBodyProperty.value));
+	PRINT(("mobile:"));
+        for (int i=0;i<10;i++){
+		PRINT(("%d%d",header->terminalMobile[i]>>4,header->terminalMobile[i]&0xf));
+	} PRINT(("\n"));
+
+	PRINT(("flowId:0x%04x\n",header->flowId));
+	if (header->msgBodyProperty.attr.hasSubPkg){
+		PRINT(("pkgCount:%d pkgNumber:%d\n",header->msgPkgItem.pkgCount,header->msgPkgItem.pkgNumber ));
+	}
+}
+
 #endif
