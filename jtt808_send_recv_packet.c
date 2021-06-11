@@ -45,6 +45,34 @@ static int Jtt808RecvUintil0x7e(jtt808handle_t* handle,uint8_t* data,int* size)
 
 	return ret;
 }
+
+static int Jtt808RecvDataBetween0x7eAnd0x7e(jtt808handle_t* handle,uint8_t* data,int* size)
+{
+	uint8_t* recvbuf = data;
+	int recvsize = 0;
+	int ret = 0;
+
+	ret = 1;
+	if (!Jtt808RecvUintil0x7e(handle,recvbuf,&recvsize)){
+                // receive again
+                if (!Jtt808RecvUintil0x7e(handle,recvbuf,&recvsize)){
+                        if (recvsize < 13){
+                                // receive again
+                                if (!Jtt808RecvUintil0x7e(handle,recvbuf,&recvsize)){
+                                }else{
+                                        recvsize = 0;
+                                }
+                        }
+
+                        if (recvsize > 13){
+				*size = recvsize;
+                                ret = 0;
+                        }
+                }
+        }
+
+	return ret;
+}
 /*
  * get from 0x7e to 0x7e
  * @return 0 :nothing    1 :hasPacket 
@@ -56,21 +84,11 @@ static int Jtt808RecvOneSubPacket(jtt808handle_t* handle,uint8_t* msg,int* msgLe
 	int hasPacket = 0;
 
 
-	if (!Jtt808RecvUintil0x7e(handle,recvbuf,&recvsize)){
-		// receive again
-		if (!Jtt808RecvUintil0x7e(handle,recvbuf,&recvsize)){
-			if (recvsize < 13){
-				// receive again
-				if (!Jtt808RecvUintil0x7e(handle,recvbuf,&recvsize)){
-				}else{
-					recvsize = 0;
-				}
-			}
-
-			if (recvsize > 13){
-				hasPacket = 1;
-			}
-		}
+	hasPacket = 0;
+	if (Jtt808RecvDataBetween0x7eAnd0x7e(handle,recvbuf,&recvsize)){
+		// error
+	}else{
+		hasPacket = 1;
 	}
 
 	if (hasPacket){
