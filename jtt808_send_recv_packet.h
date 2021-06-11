@@ -1,5 +1,5 @@
-#ifndef __JTT808_SINGLEPACKET_CLIENT__H
-#define __JTT808_SINGLEPACKET_CLIENT__H
+#ifndef _JTT808_SEND_RECV_PACKET__H
+#define _JTT808_SEND_RECV_PACKET__H
 
 #include "jtt808_common.h"
 
