@@ -90,7 +90,8 @@ class OneClientThread(threading.Thread):
         self.subframe_headers = []
         self.subframe_bodys = []
         self.mobile=""
-        
+        # debug
+        self.print_send_data = 1
     def process_data(self,data):
         if len(data) < 5:
             return -1
@@ -188,9 +189,9 @@ class OneClientThread(threading.Thread):
             ret = 2
             data = None
             msgid = header.msgid
+            send_msgid = 0
             if msgid == 0x0100: # register，返回鉴权码
                 mobile = header.mobile;
-                
                 reply_flowid = header.flowid
                 reply_result = 0
                 reply_token = None
@@ -204,7 +205,8 @@ class OneClientThread(threading.Thread):
                     self.register_ok = 1
                     self.last_heart_time = time.time()
                     reply_token = time.strftime("%Y-%m-%d %H:%M:%S ", time.localtime()) + mobile +" 1.0"
-                        
+                
+                send_msgid = 0x8100
                 data = struct.pack("!HB",reply_flowid,reply_result)
                 if reply_token:
                     data += reply_token.encode()
@@ -212,8 +214,8 @@ class OneClientThread(threading.Thread):
                 pass
                 
             retry = 0
-            if data:
-                if self.send_reply_packet(0x8100,header,data):
+            if send_msgid and data:
+                if self.send_reply_packet(send_msgid,header,data):
                     pass
                 else: # send ok
                     ret = 0
@@ -249,6 +251,11 @@ class OneClientThread(threading.Thread):
             sk = self.sk
             retry += 1
             totaldata = b'\x7e' + headerdata + payload + checkcode+ b'\x7e'
+            if self.print_send_data:
+                print("send data len",len(totaldata))
+                print(totaldata)
+                # for (i in range(0,len(totaldata)):
+                
             if sk.send(totaldata) == len(totaldata):
                 ret  = 0
                 break
