@@ -11,4 +11,8 @@ int Jtt808Encode0x7eAnd0x7d(uint8_t* inbuf,int insize,uint8_t* outbuf,int* outsi
 
 int JTT808Decode0x7d01And0x7d02(uint8_t* inbuf,int insize,uint8_t* outbuf,int* outsize);
 
+
+// convert action to raw data
+int Jtt808ConvertReigstStructToRawData(jtt808register_t* regist,uint8_t* outbuf,int* outsize);
+
 #endif

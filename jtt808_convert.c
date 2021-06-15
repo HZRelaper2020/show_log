@@ -128,3 +128,24 @@ int JTT808Decode0x7d01And0x7d02(uint8_t* inbuf,int insize,uint8_t* outbuf,int* o
         return count;
 }
 
+/*
+ *
+ * convert register struct to raw data
+ *
+ */
+int Jtt808ConvertReigstStructToRawData(jtt808register_t* regist,uint8_t* outbuf,int* outsize)
+{
+
+#ifdef BIGENDIAN
+	memcpy(outbuf,(uint8_t*)regist,sizeof(jtt808register_t));
+	*outsize = sizeof(jtt808register_t);
+#else
+	jtt808register_t r;
+	memcpy(&r,regist,sizeof(jtt808register_t));
+	r.provinceId = htons(r.provinceId);
+        r.cityId = htons(r.cityId);
+	memcpy(outbuf,(uint8_t*)&r,sizeof(jtt808register_t));
+	*outsize = sizeof(jtt808register_t);
+#endif
+	return 0;
+}

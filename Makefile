@@ -1,5 +1,5 @@
 
-sources= jtt808_send_recv_packet.c jtt808_netutil.c  jtt808_convert.c
+sources= jtt808_send_recv_packet.c jtt808_netutil.c  jtt808_convert.c jtt808_action.c
 main_send:
 	gcc $(sources) -g -DTEST_SEND_PACKET=1
 	./a.out

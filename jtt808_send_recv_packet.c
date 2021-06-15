@@ -302,13 +302,13 @@ int Jtt808SendPacket(jtt808handle_t* handle,jtt808header_t* argheader,uint8_t* p
 	memcpy(h,argheader,sizeof(jtt808header_t));
 
 
-	uint8_t multiPkg = payloadSize > 0x1ff ?1:0;
+	uint8_t multiPkg = payloadSize > 0x3ff ?1:0;
 
 	ret = -1;
 	uint16_t pkgNumber = 0;
-	const uint16_t pkgCount = (payloadSize + 0x1fe)/0x1ff;
+	const uint16_t pkgCount = (payloadSize + 0x3fe)/0x3ff;
 	while(remain > 0){
-		int sendSize = remain > 0x1ff ? 0x1ff:remain;
+		int sendSize = remain > 0x3ff ? 0x3ff:remain;
 		h->msgBodyProperty.attr.msgLength = sendSize;
 
 		if (multiPkg){
@@ -316,6 +316,8 @@ int Jtt808SendPacket(jtt808handle_t* handle,jtt808header_t* argheader,uint8_t* p
 			h->msgBodyProperty.attr.hasSubPkg = 1;
 			h->msgPkgItem.pkgCount = pkgCount;
 			h->msgPkgItem.pkgNumber = pkgNumber;
+		}else{
+			h->msgBodyProperty.attr.hasSubPkg = 0;
 		}
 
 		Jtt808ConvertHeaderToRawData(h,tempbuf,&headerSize);

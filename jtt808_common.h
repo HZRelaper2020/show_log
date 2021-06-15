@@ -14,7 +14,7 @@
 
 // for test
 #define JTT808_TEST_IP "192.168.5.7"
-#define JTT808_TEST_PORT 5555
+#define JTT808_TEST_PORT 8837 
 // for debug
 #define ERROR(arg) do{printf arg ;printf("\n");}while(0)
 #define PRINT(arg) printf arg
@@ -22,6 +22,8 @@
 //#define BIGENDIAN
 //#define ARMGCC   // for arm
 
+// max buffer length
+#define JTT808_MAX_BUFFER_LENGTH			(1024*128)
 
 #define JTT808_CHECK_RECV_CHECKSUM 			1  // if do checksum when receive
 #define JTT808_DO_SEND_CHECKSUM 			1 // if do checksum when send data
@@ -37,12 +39,12 @@
 
 #pragma pack(1)
 
-typedef enum jtt808error_t{
-	JTT808_ERROR_OK = 0,
-	JTT808_ERROR_POLL_RECV,
-	JTT808_ERROR_POLL_RECV_TIMEO,
-	JTT808_ERROR_RECV,
-}jtt808error_t;
+typedef enum jtt808Err{
+	err_ok = 0,
+	err_send_failed,
+	err_recv_failed,
+} jtt808err_t;
+
 
 
 typedef struct jtt808MsgBodyProperty{
@@ -125,7 +127,15 @@ typedef struct jtt808CommonReply{
 	uint8_t* authorCode;
 }jtt808CommonReply_t;
 
-
+typedef struct jtt808register{
+	uint16_t provinceId;
+	uint16_t cityId;
+	uint8_t manuafacturerId[11];
+	uint8_t terminalType[30];
+	uint8_t terminalId[30];
+	uint8_t plateColor;
+	uint8_t plateNumber[30];
+}jtt808register_t;
 #pragma pack()
 
 static inline void jtt808_print_data(uint8_t* data,uint16_t size)
