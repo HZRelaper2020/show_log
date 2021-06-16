@@ -5,6 +5,7 @@ import socket
 import threading
 import re
 import time
+import datetime
 import logging
 import jtt808_convert
 import jtt808_header
@@ -12,19 +13,32 @@ import jtt808_print
 
 
 class Jtt808ClientThread(threading.Thread):
-    def __init__(self,sk,closecallback,timeout,retry,maxheart_time):
+    def __init__(self,sk,fn_getclients,closecallback):
         super().__init__()
+        self.getclients = fn_getclients
         self.sk = sk
-        self.retry = retry
-        self.maxheart_time = maxheart_time
-        self.sk.settimeout(timeout)
+        # default value
+        self.retry = 3
+        self.maxheart_time = 60
+        self.timeout = 1
+        self.sk.settimeout(self.timeout)
+        
         self.closecallback = closecallback
         self.socket_is_closed = 0
         # 是否已经注册成功
         self.register_ok = 0                
+        self.terminalId = None
+        self.author_msg = None
+        # heart        
         self.last_heart_time = 0
         # 存组合包的header和body
-        self.multi_packet_list=[]        
+        self.multi_packet_list=[]
+        
+    def set_net_params(self,retry,hearttime,timeout):
+        self.retry = retry
+        self.maxheart_time = hearttime
+        self.timeout = timeout
+        self.sk.settimeout(timeout)
         
     def recv_data(self,size):
         data= self.sk.recv(size)
@@ -73,7 +87,7 @@ class Jtt808ClientThread(threading.Thread):
         while True:
             try: 
                 loop_times += 1
-                                
+                
                 data = self.recv_data_between0x7e_and_0x7e()
                 if data:
                     recv_timeo = 0
@@ -85,13 +99,26 @@ class Jtt808ClientThread(threading.Thread):
                 recv_timeo += 1
             finally:
                 removeself = 0
-                if not self.register_ok and (recv_timeo > 5 or loop_times > 3):                    
-                    removeself = 1
+                if not self.register_ok:
+                    if (recv_timeo > 5 or loop_times > 3):                    
+                        removeself = 1
+                
+                if self.register_ok:
+                    if not self.last_heart_time:
+                        self.last_heart_time = int(time.time())
+                        
+                    if int(time.time()) - self.last_heart_time > self.maxheart_time:
+                        removeself = 1
                     
                 if self.socket_is_closed: # 已经关闭                    
                     removeself = 1
                 
                 if removeself:
+                    try:
+                        self.sk.close()
+                    except:
+                        pass
+                        
                     self.closecallback(self)
                     break
     
@@ -172,10 +199,64 @@ class Jtt808ClientThread(threading.Thread):
             if pkgnum == pkgcount:
                 self.process_one_packet(one,tpyalod)
                 
-    def recv_one_packet(self,header,payload):
-        print("receive one packet success")  
-         
+    def recv_one_packet(self,header,payload):                
+        reply = None
+        if header.msgid == 0x100: # register
+            header.msgid = 0x8100
+            reply = self.process_action_register(header,payload)
+        elif header.msgid == 0x0002: # heart pkg
+            header.msgid = 0x8100
+            reply = self.process_action_heartpkg(header)
+        
+        
+        
+        if reply:
+            retry = 0
+            timeout = self.timeout
+            while retry <= self.retry:
+                retry += 1
+                try:
+                    self.send_one_packet(header,reply)
+                    break
+                except:
+                    self.sk.settimeout(self.timeout*retry)
+            
+            self.sk.settimeout(timeout)
     
+    def process_action_heartpkg(self,header):
+        pass
+        
+    def process_action_register(self,header,payload):
+        reply = payload[0:2]
+        terminalId = payload[45:75]
+        registered = False
+        for client in self.getclients():
+            if client.register_ok and client.terminalId == terminalId:
+                registered = True
+                break
+                
+        if registered:
+            reply += b'\x01'
+        else:
+            reply += b'\x00'
+            
+            self.register_ok = 1
+            self.terminalId = terminalId
+            
+            
+            # author = terminalId 
+            author = terminalId+datetime.datetime.now().strftime(' %Y-%m-%d %H:%M:%S').encode()
+            
+            totbts= int(len(author)).to_bytes(1,"little")+author
+            
+            self.author_msg = totbts
+            
+            reply += totbts
+
+        return reply
+        
+        # jtt808_print.print_rawdata(reply)        
+        
     def send_one_packet(self,header,payload):
         max_packet_size = 0x3ff
         multipkg = 1 if len(payload) > max_packet_size else 0
@@ -210,93 +291,4 @@ class Jtt808ClientThread(threading.Thread):
         data = jtt808_convert.jt808_encode_0x7d_0x7e(data)
         # send data
         return self.send_data(b'\x7e'+data+b'\x7e')
-        
-    def process_one_packet222(self,header,payload):
-        preflowid = -1 # need set
-        ret = 0
-        if JTT808_NEED_CHECK_FLOWID:
-            if preflowid +1 != header.flowid:
-                print("preflowid +1 != header.flowid")
-                ret = 1
-                
-                
-                
-        if not ret:
-            ret = 2
-            data = None
-            msgid = header.msgid
-            send_msgid = 0
-            if msgid == 0x0100: # register，返回鉴权码
-                mobile = header.mobile;
-                reply_flowid = header.flowid
-                reply_result = 0
-                reply_token = None
-                for unit in jtt808_get_client_threads():
-                    # 是否已经注册
-                    if unit != self and unit.mobile == mobile:                        
-                        reply_result = 1
-                        break
-                        
-                if not reply_result:
-                    self.register_ok = 1
-                    self.last_heart_time = time.time()
-                    reply_token = time.strftime("%Y-%m-%d %H:%M:%S ", time.localtime()) + mobile +" 1.0"
-                
-                send_msgid = 0x8100
-                data = struct.pack("!HB",reply_flowid,reply_result)
-                if reply_token:
-                    data += reply_token.encode()
-            elif msgid == 0x002:
-                pass
-                
-            retry = 0
-            if send_msgid and data:
-                if self.send_reply_packet(send_msgid,header,data):
-                    pass
-                else: # send ok
-                    ret = 0
-                                   
-        return ret
-        
-    def send_reply_packet(self,msgid,header,payload): # only for single packet
-        ret = 1
-        
-        payload = self.encode_7e7d_char(payload) # payload ok
-        
-        msgid = msgid
-        msgproperty = 0x4000 + len(payload)
-        version = 1
-        mobile = self.mobile+"000000000000"
-        flowid = header.flowid        
-        
-        headerdata = struct.pack("!HHBBBBBBBBBBBH",msgid,msgproperty,version,\
-            int(mobile[0],16),int(mobile[1],16),int(mobile[2],16),int(mobile[3],16),int(mobile[4],16),int(mobile[5],16),int(mobile[6],16),int(mobile[7],16),int(mobile[8],16),int(mobile[9],16),\
-            flowid)
-            
-        headerdata = self.encode_7e7d_char(headerdata)
-        
-        checkcode = 0
-        for i in headerdata + payload:
-            checkcode ^= i
-            
-        checkcode = checkcode.to_bytes(1,"little")    
-        checkcode = self.encode_7e7d_char(checkcode)
-         
-        retry = 0
-        while (retry < self.retry):
-            sk = self.sk
-            retry += 1
-            totaldata = b'\x7e' + headerdata + payload + checkcode+ b'\x7e'
-            if self.print_send_data:
-                print("send data len",len(totaldata))
-                print(totaldata)
-                # for (i in range(0,len(totaldata)):
-                
-            if sk.send(totaldata) == len(totaldata):
-                ret  = 0
-                break
-            else:
-                print("send failed");
-                
-        return ret
         

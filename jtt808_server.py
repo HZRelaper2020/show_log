@@ -37,14 +37,16 @@ class Jtt808ServerThread(threading.Thread):
         while True:
             client,addr = self.sk.accept()            
             logging.info("recv from %s",addr)            
-            thread = jtt808_client.Jtt808ClientThread(client,self.client_close_callback,1,3,60)
+            thread = jtt808_client.Jtt808ClientThread(client,self.get_clients,self.client_close_callback)
             thread.start()
             
             self.clients.append(thread)                        
     
+    def get_clients(self):
+        return self.clients
+        
     def client_close_callback(self,client):
         self.clients.remove(client)
-    
     
 def main():
     logging.basicConfig(level = logging.INFO)    
@@ -58,7 +60,6 @@ def main():
             os.kill(os.getpid(),-9)
             exit(0)
         elif s == "1":
-            print(g_livecient)
-
+            print(server.get_clients())
 
 main()

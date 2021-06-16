@@ -38,7 +38,7 @@ class Jtt808Header():
             self.version = array[2]
             self.mobile=b''
             for i in range (0,10):
-                self.mobile += bytes(array[3+i])
+                self.mobile += int(array[3+i]).to_bytes(1,'little')
             
             self.flowid = array[13]
             
@@ -67,10 +67,10 @@ class Jtt808Header():
         return self.msgproperty.has_sub_packet
         
     def convert_to_rawdata(self):
-        m= self.mobile
+        m= self.mobile        
         ret = struct.pack("!HHBBBBBBBBBBBH",self.msgid,self.msgproperty.get_value(),self.version,\
                 m[0],m[1],m[2],m[3],m[4],m[5],m[6],m[7],m[8],m[9],\
-                self.flowid)        
+                self.flowid)
                 
         if self.is_multi_packet():            
             ret += struct.pack("!HH",self.pkgcount,self.pkgnumber)
