@@ -13,4 +13,6 @@ int Jtt808NetRecv(jtt808handle_t* handle,uint8_t* recvdata,int recvsize);
 
 int Jtt808NetSend(jtt808handle_t* handle,uint8_t* senddata,int sendsize);
 
+int Jtt808ClearNetRecvBuffer(jtt808handle_t* handle,int ptime);
+
 #endif

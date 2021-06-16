@@ -14,7 +14,7 @@
 
 // for test
 #define JTT808_TEST_IP "192.168.5.7"
-#define JTT808_TEST_PORT 5555
+#define JTT808_TEST_PORT 8837 
 // for debug
 #define ERROR(arg) do{printf arg ;printf("\n");}while(0)
 #define PRINT(arg) printf arg
@@ -22,9 +22,9 @@
 //#define BIGENDIAN
 //#define ARMGCC   // for arm
 
-
 #define JTT808_CHECK_RECV_CHECKSUM 			1  // if do checksum when receive
 #define JTT808_DO_SEND_CHECKSUM 			1 // if do checksum when send data
+#define JTT808_AUTO_SET_FLOWID				1 // if auto set flowid in send packet
 
 #define MAX_JTT808_SEND_RETRY_TIMES 			3
 #define MAX_JTT808_RECV_RETRY_TIMES 			3
@@ -32,17 +32,34 @@
 #define MAX_JTT808_RECV_POLL_TIME 			1000 // ms
 
 
-#define JTT808_MSGID_REGISTER 0x100 
+#define JTT808_MSGID_REGISTER 			0x0100 
+#define JTT808_MSGID_SEND_HEARTPKG		0x0002 
 
 
 #pragma pack(1)
 
-typedef enum jtt808error_t{
-	JTT808_ERROR_OK = 0,
-	JTT808_ERROR_POLL_RECV,
-	JTT808_ERROR_POLL_RECV_TIMEO,
-	JTT808_ERROR_RECV,
-}jtt808error_t;
+typedef enum jtt808Err{
+	err_ok = 0,
+	err_send_failed,
+	err_recv_failed,
+	err_exceed_max_recvlen,
+	err_convert_header,
+	err_msg_body_not_matched,
+	
+	err_not_supported_send_msgid,
+
+	err_msg_id_not_matched = 1000,
+	err_flowid_not_matched,
+	err_register_car_already_registered,
+	err_register_no_such_car,
+	err_register_terminal_already_registered,
+	err_register_database_no_such_terminal,
+	err_register_unsupported_code,
+
+
+	err_unknow,
+} jtt808err_t;
+
 
 
 typedef struct jtt808MsgBodyProperty{
@@ -90,8 +107,8 @@ typedef struct jtt808{
 }jtt808_t;
 
 typedef struct jtt808authorToken{
-        uint8_t payload[200];
         uint8_t len;
+        uint8_t payload[200];
 }jtt808authorToken_t;
 
 typedef struct jtt808handle{
@@ -125,7 +142,15 @@ typedef struct jtt808CommonReply{
 	uint8_t* authorCode;
 }jtt808CommonReply_t;
 
-
+typedef struct jtt808register{
+	uint16_t provinceId;
+	uint16_t cityId;
+	uint8_t manuafacturerId[11];
+	uint8_t terminalType[30];
+	uint8_t terminalId[30];
+	uint8_t plateColor;
+	uint8_t plateNumber[30];
+}jtt808register_t;
 #pragma pack()
 
 static inline void jtt808_print_data(uint8_t* data,uint16_t size)
