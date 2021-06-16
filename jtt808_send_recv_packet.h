@@ -3,7 +3,7 @@
 
 #include "jtt808_common.h"
 
-int Jtt808RecvOnePacket(jtt808handle_t* handle,uint8_t* msg,int* msgLen);
+int Jtt808RecvOnePacket(jtt808handle_t* handle,uint8_t* msg,int* msgLen,int maxlen);
 
 int Jtt808InitHandle(jtt808handle_t* handle);
 

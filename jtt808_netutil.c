@@ -9,7 +9,13 @@
 
 #define TEST_NETWORK_POLL 0
 
-static int Jtt808PollReadOrWrite(jtt808handle_t* handle,int dir)
+/*
+ *
+ *
+ *@return 0:has data  1:timeout
+ *
+ */
+static int Jtt808PollReadOrWrite(jtt808handle_t* handle,int dir,int ptime)
 {
 
         int ret = 0;
@@ -20,7 +26,7 @@ static int Jtt808PollReadOrWrite(jtt808handle_t* handle,int dir)
         pfd.events = dir;
         pfd.revents = 1;
 
-        ret = poll(&pfd,1,handle->pollRecvTime);
+        ret = poll(&pfd,1,ptime);
 
         if (ret < 0){ // error
                 perror("poll");
@@ -32,6 +38,35 @@ static int Jtt808PollReadOrWrite(jtt808handle_t* handle,int dir)
         }
 
         return ret;
+}
+
+/*
+ *
+ * clear socket recv buffer
+ * @return 0 success
+ *
+ */
+int Jtt808ClearNetRecvBuffer(jtt808handle_t* handle,int ptime)
+{
+	int ret = 0;
+	uint8_t recvbuf[1024];
+	while(1){
+		ret = Jtt808PollReadOrWrite(handle,POLLIN,ptime);
+		if (ret == 0){ // has data
+			if (handle->recv(handle,recvbuf,sizeof(recvbuf)) > 0){
+				ERROR(("Jtt808ClearRecvBuffer recv_data failed"));
+			}else{
+				ret = -1;
+				break;
+			}
+		}else if (ret == 1){
+			ret = 0;
+			break;
+		}else if (ret < 0){
+			break;
+		}
+	}
+	return ret;
 }
 
 int Jtt808CreteSocket(jtt808handle_t* handle)
@@ -98,7 +133,7 @@ int Jtt808NetSend(jtt808handle_t* handle,uint8_t* senddata,int sendsize)
 		if (times > 0xff)
 			break;
 
-		int ret = Jtt808PollReadOrWrite(handle,POLLOUT);
+		int ret = Jtt808PollReadOrWrite(handle,POLLOUT,handle->pollSendTime);
 
 		if (ret == 0){
 			ret= send(handle->sk,senddata,sendsize,0);
@@ -128,7 +163,7 @@ int Jtt808NetRecv(jtt808handle_t* handle,uint8_t* recvdata,int recvsize)
 {
         int ret = 0;
 
-        ret = Jtt808PollReadOrWrite(handle,POLLIN);
+        ret = Jtt808PollReadOrWrite(handle,POLLIN,handle->pollRecvTime);
 
         if (ret == 0){
                 ret= recv(handle->sk,recvdata,recvsize,0);
