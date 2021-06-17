@@ -15,5 +15,9 @@ int Jtt808Decode0x7d01And0x7d02(uint8_t* inbuf,int insize,uint8_t* outbuf,int* o
 // convert action to raw data
 int Jtt808ConvertReigstStructToRawData(jtt808register_t* regist,uint8_t* outbuf,int* outsize);
 
+int Jtt808ConvertPositionStructToRawData(jtt808position_t* pos,uint8_t* outbuf,int* outsize);
+
 int Jtt8080GetRawDataBodyIndex(uint8_t* rawbuf,int rawlen);
+
+
 #endif

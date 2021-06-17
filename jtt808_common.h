@@ -34,6 +34,7 @@
 
 #define JTT808_MSGID_REGISTER 			0x0100 
 #define JTT808_MSGID_SEND_HEARTPKG		0x0002 
+#define JTT808_MSGID_SEND_POSITION		0x0200
 
 
 #pragma pack(1)
@@ -56,6 +57,11 @@ typedef enum jtt808Err{
 	err_register_database_no_such_terminal,
 	err_register_unsupported_code,
 
+	err_commonreply_failed = 1100,
+	err_commonreply_msgwrong,
+	err_commonreply_nosupported,
+	err_commonreply_inprocess,
+	err_commonreply_unsupportedcode,
 
 	err_unknow,
 } jtt808err_t;
@@ -151,6 +157,17 @@ typedef struct jtt808register{
 	uint8_t plateColor;
 	uint8_t plateNumber[30];
 }jtt808register_t;
+
+typedef struct jtt808position{
+	uint32_t alarmFlag;
+	uint32_t status;
+	uint32_t latitude;
+	uint32_t longitude;
+	uint16_t altitude;
+	uint16_t speed;
+	uint16_t direction;
+	uint8_t time[6];
+}jtt808position_t;
 #pragma pack()
 
 static inline void jtt808_print_data(uint8_t* data,uint16_t size)

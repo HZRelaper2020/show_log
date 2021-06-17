@@ -30,6 +30,13 @@ jtt808err_t Jtt808BasicCheckSendRecv(jtt808header_t* sendheader,uint8_t* recvbuf
 					ret = err_msg_id_not_matched;
 				}
 				break;
+			case JTT808_MSGID_SEND_HEARTPKG:
+			case JTT808_MSGID_SEND_POSITION:
+				if (r->msgId == 0x8001){
+				}else{
+					ret = err_msg_id_not_matched;
+				}
+				break;
 			default:
 				ret = err_not_supported_send_msgid;
 				break;

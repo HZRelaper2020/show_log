@@ -147,7 +147,7 @@ int Jtt808Decode0x7d01And0x7d02(uint8_t* inbuf,int insize,uint8_t* outbuf,int* o
 int Jtt808ConvertReigstStructToRawData(jtt808register_t* regist,uint8_t* outbuf,int* outsize)
 {
 
-#ifdef BIGENDIAN
+#if BIGENDIAN
 	memcpy(outbuf,(uint8_t*)regist,sizeof(jtt808register_t));
 	*outsize = sizeof(jtt808register_t);
 #else
@@ -157,6 +157,24 @@ int Jtt808ConvertReigstStructToRawData(jtt808register_t* regist,uint8_t* outbuf,
         r.cityId = htons(r.cityId);
 	memcpy(outbuf,(uint8_t*)&r,sizeof(jtt808register_t));
 	*outsize = sizeof(jtt808register_t);
+#endif
+	return 0;
+}
+
+int Jtt808ConvertPositionStructToRawData(jtt808position_t* pos,uint8_t* outbuf,int* outsize)
+{
+	memcpy(outbuf,pos,sizeof(jtt808position_t));
+	*outsize = sizeof(jtt808position_t);
+#ifndef  BIGENDIAN
+	pos->alarmFlag = htonl(pos->alarmFlag);
+	pos->status = htonl(pos->status);
+	pos->latitude = htonl(pos->latitude);
+	pos->longitude = htonl(pos->longitude);
+	pos->altitude = htons(pos->altitude);
+	pos->speed = htons(pos->speed);
+	pos->direction = htons(pos->direction);
+
+	memcpy(outbuf,pos,*outsize);
 #endif
 	return 0;
 }
