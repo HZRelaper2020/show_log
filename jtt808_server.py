@@ -40,7 +40,7 @@ class Jtt808ServerThread(threading.Thread):
             thread = jtt808_client.Jtt808ClientThread(client,self.get_clients,self.client_close_callback)
             thread.start()
             
-            self.clients.append(thread)                        
+            self.clients.append(thread)
     
     def get_clients(self):
         return self.clients
@@ -60,6 +60,6 @@ def main():
             os.kill(os.getpid(),-9)
             exit(0)
         elif s == "1":
-            print(server.get_clients())
+            print(server.get_clients())                
 
 main()

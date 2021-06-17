@@ -10,6 +10,9 @@ import logging
 import jtt808_convert
 import jtt808_header
 import jtt808_print
+import jtt808_reply
+import jtt808_save_draw
+import traceback
 
 
 class Jtt808ClientThread(threading.Thread):
@@ -33,6 +36,8 @@ class Jtt808ClientThread(threading.Thread):
         self.last_heart_time = 0
         # 存组合包的header和body
         self.multi_packet_list=[]
+        # 保存及绘图
+        self.savedraw = jtt808_save_draw.Jtt808SaveDraw()
         
     def set_net_params(self,retry,hearttime,timeout):
         self.retry = retry
@@ -95,7 +100,7 @@ class Jtt808ClientThread(threading.Thread):
                     
             except Exception as e:
                 print(e)
-                # traceback.print_exc()
+                traceback.print_exc()
                 recv_timeo += 1
             finally:
                 removeself = 0
@@ -115,7 +120,8 @@ class Jtt808ClientThread(threading.Thread):
                 
                 if removeself:
                     try:
-                        self.sk.close()
+                        del self.savedraw
+                        self.sk.close()                        
                     except:
                         pass
                         
@@ -204,11 +210,14 @@ class Jtt808ClientThread(threading.Thread):
         if header.msgid == 0x100: # register
             header.msgid = 0x8100
             reply = self.process_action_register(header,payload)
-        elif header.msgid == 0x0002: # heart pkg
-            header.msgid = 0x8100
-            reply = self.process_action_heartpkg(header)
         
-        
+        if self.register_ok:
+            if header.msgid == 0x0002: # heart pkg
+                header.msgid = 0x8001
+                reply = self.process_action_heartpkg(header)            
+            elif header.msgid == 0x0200: # gps
+                header.msgid = 0x8001
+                reply = self.process_action_position(header,payload)                
         
         if reply:
             retry = 0
@@ -222,27 +231,44 @@ class Jtt808ClientThread(threading.Thread):
                     self.sk.settimeout(self.timeout*retry)
             
             self.sk.settimeout(timeout)
-    
+            
+    def process_action_position(self,header,payload):
+        reply = jtt808_reply.Jtt808Reply()
+        reply.arg1 = header.flowid
+        reply.arg2 = header.msgid
+        reply.arg3 = 0
+        
+        if reply.arg3 == 0:
+           self.savedraw.process_position_data(payload)           
+        return reply.to_bytes("HHB")
+        
     def process_action_heartpkg(self,header):
-        pass
+        reply = jtt808_reply.Jtt808Reply()
+        reply.arg1 = header.flowid
+        reply.arg2 = header.msgid
+        reply.arg3 = 0
+        
+        return reply.to_bytes("HHB")
         
     def process_action_register(self,header,payload):
-        reply = payload[0:2]
+        reply = jtt808_reply.Jtt808Reply()
+        
         terminalId = payload[45:75]
-        registered = False
+        alreadyregistered = False
         for client in self.getclients():
             if client.register_ok and client.terminalId == terminalId:
-                registered = True
+                alreadyregistered = True
                 break
-                
-        if registered:
-            reply += b'\x01'
+        
+        reply.arg1 = header.msgid
+        
+        if alreadyregistered:
+            reply.arg2= 1
         else:
-            reply += b'\x00'
+            reply.arg2= 0
             
             self.register_ok = 1
-            self.terminalId = terminalId
-            
+            self.terminalId = terminalId            
             
             # author = terminalId 
             author = terminalId+datetime.datetime.now().strftime(' %Y-%m-%d %H:%M:%S').encode()
@@ -251,11 +277,9 @@ class Jtt808ClientThread(threading.Thread):
             
             self.author_msg = totbts
             
-            reply += totbts
-
-        return reply
+            self.savedraw.set_client_id(terminalId)
         
-        # jtt808_print.print_rawdata(reply)        
+        return reply.to_bytes('HB') + (self.author_msg if self.register_ok else b'')        
         
     def send_one_packet(self,header,payload):
         max_packet_size = 0x3ff
@@ -290,5 +314,6 @@ class Jtt808ClientThread(threading.Thread):
         # encode 0x7d and 0x7e
         data = jtt808_convert.jt808_encode_0x7d_0x7e(data)
         # send data
+        # jtt808_print.print_rawdata(data)
         return self.send_data(b'\x7e'+data+b'\x7e')
         

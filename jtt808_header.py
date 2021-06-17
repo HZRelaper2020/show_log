@@ -31,7 +31,7 @@ class Jtt808Header():
         if (len(data) < 17):
             logging.error("data len is too small")            
         else:    
-            array = struct.unpack("!HHBBBBBBBBBBBH",data[0:17])
+            array = struct.unpack("!HH11BH",data[0:17])
             self.msgid = array[0]
             self.msgproperty = Jtt808MsgProperty()
             self.msgproperty.convert_from_value(array[1])
@@ -68,7 +68,7 @@ class Jtt808Header():
         
     def convert_to_rawdata(self):
         m= self.mobile        
-        ret = struct.pack("!HHBBBBBBBBBBBH",self.msgid,self.msgproperty.get_value(),self.version,\
+        ret = struct.pack("!HH11BH",self.msgid,self.msgproperty.get_value(),self.version,\
                 m[0],m[1],m[2],m[3],m[4],m[5],m[6],m[7],m[8],m[9],\
                 self.flowid)
                 
