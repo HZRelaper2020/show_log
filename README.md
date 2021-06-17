@@ -1,4 +1,14 @@
-解析log数据<br/>
+### jtt808开头的都是关于jtt808协议的
+#### 基础功能
+* 注册
+* 发送心跳包
+* 传输gps数据
+* 传输三轴传感器数据
+* 传输六轴传感器数据
+
+
+<br/><br/><br/><br/><br/><br/>
+### client.py 解析log数据
 运行 py client.py arg1 arg2<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;arg1表示要输入hex的文件<br/> 
 &nbsp;&nbsp;&nbsp;&nbsp;arg2  0 表示画三轴的图，1 表示画6轴的图<br/>
