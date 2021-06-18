@@ -178,3 +178,10 @@ int Jtt808ConvertPositionStructToRawData(jtt808position_t* pos,uint8_t* outbuf,i
 #endif
 	return 0;
 }
+
+int Jtt808ConvertStructToRawData(uint8_t* stct,int stctsize,uint8_t* outbuf,int* outsize)
+{
+	memcpy(outbuf,stct,stctsize);
+	*outsize = stctsize;
+	return 0;
+}

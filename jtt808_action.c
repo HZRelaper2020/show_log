@@ -211,6 +211,82 @@ jtt808err_t Jtt808DoActionSendPosition(jtt808handle_t* handle,jtt808header_t* he
 	return ret;
 }
 
+/*
+ *
+ * send acceleration  A1
+ *
+ */
+jtt808err_t Jtt808DoActionSendAccelerationA1(jtt808handle_t* handle,jtt808header_t* header,jtt808accelerationA1_t* acce)
+{
+        jtt808err_t ret = err_ok;
+        uint8_t sendPayload[1514*2];
+        int sendPayloadSize = 0;
+        uint8_t recvbuf[1514*2];
+        int recvlen;
+
+        header->msgId = JTT808_MSGID_SEND_ACCELRATION_A1;
+
+        Jtt808ConvertStructToRawData((uint8_t*)acce,sizeof(jtt808accelerationA1_t),sendPayload,&sendPayloadSize);
+        DO_SEND_RECV_CHECK(sendPayload,sendPayloadSize,recvbuf,recvlen);
+
+        if (ret == err_ok){
+                int bodyIndex = Jtt8080GetRawDataBodyIndex(recvbuf,recvlen);
+                uint8_t value = recvbuf[bodyIndex+4];
+                if (value == 0){
+                        // ok
+                }else if (value == 1){
+                        ret = err_commonreply_failed;
+                }else if (value == 2){
+                        ret = err_commonreply_msgwrong;
+                }else if (value == 3){
+                        ret = err_commonreply_nosupported;
+                }else if (value == 4){
+                        ret = err_commonreply_inprocess;
+                }else{
+                        ret = err_commonreply_unsupportedcode;
+                }
+        }
+
+        return ret;
+}
+/*
+ *
+ * send acceleration  C1
+ *
+ */
+jtt808err_t Jtt808DoActionSendAccelerationC1(jtt808handle_t* handle,jtt808header_t* header,jtt808accelerationC1_t* acce)
+{
+        jtt808err_t ret = err_ok;
+        uint8_t sendPayload[1514*2];
+        int sendPayloadSize = 0;
+        uint8_t recvbuf[1514*2];
+        int recvlen;
+
+        header->msgId = JTT808_MSGID_SEND_ACCELRATION_C1 ;
+
+        Jtt808ConvertStructToRawData((uint8_t*)acce,sizeof(*acce),sendPayload,&sendPayloadSize);
+        DO_SEND_RECV_CHECK(sendPayload,sendPayloadSize,recvbuf,recvlen);
+
+        if (ret == err_ok){
+                int bodyIndex = Jtt8080GetRawDataBodyIndex(recvbuf,recvlen);
+                uint8_t value = recvbuf[bodyIndex+4];
+                if (value == 0){
+                        // ok
+                }else if (value == 1){
+                        ret = err_commonreply_failed;
+                }else if (value == 2){
+                        ret = err_commonreply_msgwrong;
+                }else if (value == 3){
+                        ret = err_commonreply_nosupported;
+                }else if (value == 4){
+                        ret = err_commonreply_inprocess;
+                }else{
+                        ret = err_commonreply_unsupportedcode;
+                }
+        }
+
+        return ret;
+}
 #if JTT808_TEST_REGISTER || JTT808_TEST_SEND_HEART_PACKET
 int main()
 {
@@ -253,26 +329,88 @@ int main()
 #endif
 
 #if JTT808_TEST_SEND_POSITION_PACKET
-	jtt808position_t pos;
-	memset(&pos,0,sizeof(pos));
-	pos.alarmFlag = 0x12345678;
-	pos.status = 0x22345678;
-	pos.latitude = 0x32345678;
-	pos.longitude = 0x42345678;
-	pos.altitude = 0x3344;
-	pos.speed = 0x5566;
-	pos.direction = 0x7788;
-	pos.time[0] = 0x21;
-	pos.time[1] = 0x06;
-	pos.time[2] = 0x17;
-	pos.time[3] = 0x14;
-	pos.time[4] = 0x09;
-	pos.time[5] = 0x31;
+	for (int i=0;i<10;i++){
+		jtt808position_t pos;
+		memset(&pos,0,sizeof(pos));
+		pos.alarmFlag = 0x12345678;
+		pos.status = 0x22345678;
+//		pos.longitude = 0x32345678;
+		pos.longitude = i*i;
+		//pos.latitude = 0x42345678;
+		pos.latitude = i*i+3;
+		pos.altitude = 0x3344;
+		pos.speed = 0x5566;
+		pos.direction = 0x7788;
+		pos.time[0] = 0x21;
+		pos.time[1] = 0x06;
+		pos.time[2] = 0x17;
+		pos.time[3] = 0x14;
+		pos.time[4] = 0x09;
+		pos.time[5] = ((i+1)/10<<4) + ((i+1)%10);
 
-	err=Jtt808DoActionSendPosition(handle,&header,&pos);
-	PRINT(("send position result:%d \n",err));
+		err=Jtt808DoActionSendPosition(handle,&header,&pos);
+		PRINT(("send position result:%d \n",err));
+		sleep(1);
+	}
 #endif
-	getchar();
+
+#if JTT808_TEST_SEND_ACCELERATION_A1
+	for (int i = 0;i<10;i++){
+		jtt808accelerationA1_t acce;
+		memset(&acce,0,sizeof(acce));
+
+		acce.eventType = 0x3412;
+		acce.timestamp = 0x7856;
+		acce.time[0] = 0x1;
+		acce.time[1] = 0x2;
+		acce.time[2] = 0x3;
+		acce.time[3] = 0x4;
+		acce.time[4] = 0x5;
+		acce.time[5] = 0x6;
+		acce.millisecond= i+1;
+		acce.resolution = 0x1;
+		acce.x = i;
+		acce.y = -2;
+		acce.z = 3;
+
+		err=Jtt808DoActionSendAccelerationA1(handle,&header,&acce);
+                PRINT(("send acceleration A1 result:%d \n",err));
+                sleep(1);
+	}
+#endif
+
+#if JTT808_TEST_SEND_ACCELERATION_C1
+        for (int i = 0;i<10;i++){
+                jtt808accelerationC1_t acce;
+                memset(&acce,0,sizeof(acce));
+
+                acce.eventType = 0x3412;
+                acce.time[0] = 0x1;
+                acce.time[1] = 0x2;
+                acce.time[2] = 0x3;
+                acce.time[3] = 0x4;
+                acce.time[4] = 0x5;
+                acce.time[5] = 0x6;
+                acce.millisecond= i+1;
+
+                acce.temp = 0x1;
+                acce.pitch = 1;
+                acce.roll = -2;
+                acce.yaw = 3;
+
+		acce.aacx = 0x1;
+		acce.aacy = 0x1;
+		acce.aacz = 0x1;
+		acce.gyrox = 0x2;
+		acce.gyroy = 0x2;
+		acce.gyroz = 0x2;
+
+                err=Jtt808DoActionSendAccelerationC1(handle,&header,&acce);
+                PRINT(("send acceleration C1 result:%d \n",err));
+                sleep(1);
+        }
+#endif
+
 	Jtt808CloseSocket(handle);
 	return 0;
 }

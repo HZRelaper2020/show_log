@@ -19,5 +19,6 @@ int Jtt808ConvertPositionStructToRawData(jtt808position_t* pos,uint8_t* outbuf,i
 
 int Jtt8080GetRawDataBodyIndex(uint8_t* rawbuf,int rawlen);
 
+int Jtt808ConvertStructToRawData(uint8_t* stct,int stctsize,uint8_t* outbuf,int* outsize);
 
 #endif

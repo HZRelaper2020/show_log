@@ -35,6 +35,8 @@
 #define JTT808_MSGID_REGISTER 			0x0100 
 #define JTT808_MSGID_SEND_HEARTPKG		0x0002 
 #define JTT808_MSGID_SEND_POSITION		0x0200
+#define JTT808_MSGID_SEND_ACCELRATION_A1	0xE001
+#define JTT808_MSGID_SEND_ACCELRATION_C1	0xE002
 
 
 #pragma pack(1)
@@ -168,6 +170,34 @@ typedef struct jtt808position{
 	uint16_t direction;
 	uint8_t time[6];
 }jtt808position_t;
+
+typedef struct jtt808accelerationA1{
+	uint16_t eventType;
+	uint16_t timestamp;
+        uint8_t time[6]; // year,month,day,hour,minutes,second
+	uint16_t millisecond;
+        uint8_t resolution;
+        char x;
+        char y;
+        char z;
+}jtt808accelerationA1_t;
+
+typedef struct jtt808accelerationC1{
+	uint16_t eventType;
+	uint8_t time[6];
+	uint16_t millisecond;
+	uint16_t temp;
+	float pitch;
+	float roll;
+	float yaw;
+	uint16_t aacx;
+	uint16_t aacy;
+	uint16_t aacz;
+	uint16_t gyrox;
+	uint16_t gyroy;
+	uint16_t gyroz;
+}jtt808accelerationC1_t;
+
 #pragma pack()
 
 static inline void jtt808_print_data(uint8_t* data,uint16_t size)
