@@ -99,8 +99,11 @@ class Jtt808ClientThread(threading.Thread):
                     self.process_recv_step1(data)
                     
             except Exception as e:
-                print(e)
-                traceback.print_exc()
+                if str(e) == 'timed out':
+                    pass
+                else:
+                    traceback.print_exc()
+                    
                 recv_timeo += 1
             finally:
                 removeself = 0
@@ -218,7 +221,13 @@ class Jtt808ClientThread(threading.Thread):
             elif header.msgid == 0x0200: # gps
                 header.msgid = 0x8001
                 reply = self.process_action_position(header,payload)                
-        
+            elif header.msgid == 0xE001: # acceleration a1
+                header.msgid = 0x8001
+                reply = self.process_action_acceleration_a1(header,payload)
+            elif header.msgid == 0xE002: # acceleration c1
+                header.msgid = 0x8001
+                reply = self.process_action_acceleration_c1(header,payload)
+                
         if reply:
             retry = 0
             timeout = self.timeout
@@ -231,7 +240,7 @@ class Jtt808ClientThread(threading.Thread):
                     self.sk.settimeout(self.timeout*retry)
             
             self.sk.settimeout(timeout)
-            
+        
     def process_action_position(self,header,payload):
         reply = jtt808_reply.Jtt808Reply()
         reply.arg1 = header.flowid
@@ -239,16 +248,19 @@ class Jtt808ClientThread(threading.Thread):
         reply.arg3 = 0
         
         if reply.arg3 == 0:
-           self.savedraw.process_position_data(payload)           
+           self.savedraw.process_position_data(payload)
         return reply.to_bytes("HHB")
-        
-    def process_action_heartpkg(self,header):
+    
+    def get_common_reply(self,header,value):
         reply = jtt808_reply.Jtt808Reply()
         reply.arg1 = header.flowid
         reply.arg2 = header.msgid
-        reply.arg3 = 0
+        reply.arg3 = value
         
         return reply.to_bytes("HHB")
+        
+    def process_action_heartpkg(self,header):
+        return self.get_common_reply(header,0)
         
     def process_action_register(self,header,payload):
         reply = jtt808_reply.Jtt808Reply()
@@ -280,6 +292,17 @@ class Jtt808ClientThread(threading.Thread):
             self.savedraw.set_client_id(terminalId)
         
         return reply.to_bytes('HB') + (self.author_msg if self.register_ok else b'')        
+    
+    def process_action_position(self,header,payload):
+        self.savedraw.process_position_data(payload)
+        return self.get_common_reply(header,0)
+    
+    def process_action_acceleration_a1(self,header,payload):
+        self.savedraw.process_accelration_a1_data(payload)
+        return self.get_common_reply(header,0)
+    def process_action_acceleration_c1(self,header,payload):
+        self.savedraw.process_accelration_c1_data(payload)
+        return self.get_common_reply(header,0)
         
     def send_one_packet(self,header,payload):
         max_packet_size = 0x3ff

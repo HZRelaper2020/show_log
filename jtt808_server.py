@@ -47,19 +47,3 @@ class Jtt808ServerThread(threading.Thread):
         
     def client_close_callback(self,client):
         self.clients.remove(client)
-    
-def main():
-    logging.basicConfig(level = logging.INFO)    
-    
-    server = Jtt808ServerThread(8837)
-    server.start()
-        
-    while True:
-        s= input()
-        if not s or s=="e":
-            os.kill(os.getpid(),-9)
-            exit(0)
-        elif s == "1":
-            print(server.get_clients())                
-
-main()

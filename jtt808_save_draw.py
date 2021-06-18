@@ -11,37 +11,62 @@ class Jtt808SaveDraw():
     def __init__(self):
         self.clientid = "" # for save file
         self.fd_position = None
+        self.fd_acceleration_a1 = None
+        self.fd_acceleration_c1 = None
+        
         self.save_file_dir = "data"
         
-        self.drawposition_thr = jtt808_draw.Jtt808DrawModel()
+        self.drawer = jtt808_draw.drawer
         
     def __del__(self):
         if self.fd_position:
             self.fd_position.close()
             self.fd_position = None
-            
-        self.drawposition_thr.done = True
-    
+        if self.fd_acceleration_a1:
+            self.fd_acceleration_a1.close()
+            self.fd_acceleration_a1 = None
+        if self.fd_acceleration_c1:
+            self.fd_acceleration_c1.close()
+            self.fd_acceleration_c1 = None
+                        
     def set_client_id(self,clientid):
         tempstr = ""
         for i in clientid:
             tempstr += "%02x"%i;            
         self.clientid = tempstr
         
-    def process_position_data(self,payload):                
+    def get_create_filename(self,param):
+        return (self.save_file_dir+"/" + datetime.datetime.now().strftime('%Y_%m_%d__%H_%M_%S')+"_%s__"+self.clientid+".txt")%param
+        
+    def process_position_data(self,payload): 
+        gps = jtt808_structs.GpsStruct(payload)        
+        
         if not self.fd_position:
-            filename = self.save_file_dir+"/" + datetime.datetime.now().strftime('%Y_%m_%d__%H_%M_%S')+"_%s__"+self.clientid+".txt"            
-            self.fd_position = open(filename%"gps","w")
-                
-            self.drawposition_thr.start()
+            filename = self.get_create_filename("gps")           
+            self.fd_position = open(filename,"w")                
+            self.save_file(self.fd_position,gps.to_string(1))
             
-        gps = jtt808_structs.GpsStruct(payload)
         self.save_file(self.fd_position,gps.to_string())
-        
-    def draw_position(self,GpsCls):
-        pass
+        self.drawer.add_param(gps,1)
     
+    def process_accelration_a1_data(self,payload):
+        acce = jtt808_structs.AcclerationA1Struct(payload)
+        if not self.fd_acceleration_a1:
+            filename = self.get_create_filename("acceleration_a1")
+            self.fd_acceleration_a1 = open(filename,"w")
+            self.save_file(self.fd_acceleration_a1,acce.to_string(1))
+        self.save_file(self.fd_acceleration_a1,acce.to_string())
+        self.drawer.add_param(acce,2)
+        
+    def process_accelration_c1_data(self,payload):
+        acce = jtt808_structs.AcclerationC1Struct(payload)
+        if not self.fd_acceleration_c1:
+            filename = self.get_create_filename("acceleration_c1")
+            self.fd_acceleration_c1 = open(filename,"w")
+            self.save_file(self.fd_acceleration_c1,acce.to_string(1))
+        self.save_file(self.fd_acceleration_c1,acce.to_string())
+        self.drawer.add_param(acce,3)
+        
     def save_file(self,fd,data):
-        pass
-        
-    
+        if data:
+            fd.write(data+"\t\n")
