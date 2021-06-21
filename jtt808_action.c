@@ -61,14 +61,14 @@ static jtt808err_t Jtt808DoSendAndRecv(Jtt808SendAndRecv_t* sr)
 		while(Jtt808SendPacket(handle,header,sendPayload,sendPayloadSize) && nowSendTimes <=maxSendRetryTimes){
 			ret = err_send_failed;
 			nowSendTimes += 1;
-			handle->pollSendTime = (nowSendTimes) * pollSendTime;
+			handle->pollSendTime = (nowSendTimes+1) * handle->pollSendTime;
 		}
 
 		if (nowSendTimes <=maxSendRetryTimes){
 			while (Jtt808RecvOnePacket(handle,recvtemp,&recvlen,sizeof(recvtemp)) && nowRecvTimes <= maxRecvRetryTimes){
 				nowRecvTimes += 1;
 				ret = err_recv_failed;
-				handle->pollRecvTime = (nowRecvTimes) * pollRecvTime;
+				handle->pollRecvTime = (nowRecvTimes+1) * handle->pollRecvTime;
 			}
 		}
 
