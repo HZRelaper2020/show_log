@@ -9,6 +9,16 @@
 
 #define TEST_NETWORK_POLL 0
 
+#if ARMGCC && NET_CYCLONE
+#define POLLIN 1
+#define POLLOUT 2
+struct pollfd{
+	int fd;
+	short events;
+	short revents;
+};
+#endif
+
 /*
  *
  *
@@ -17,8 +27,28 @@
  */
 static int Jtt808PollReadOrWrite(jtt808handle_t* handle,int dir,int ptime)
 {
+		int ret = 0;
+#if ARMGCC && NET_CYCLONE
+		int timeout_ms = ptime;
+		if (dir == POLLIN){
+			struct timeval interval = {timeout_ms / 1000, (timeout_ms % 1000) * 1000};
+			if (interval.tv_sec < 0 || (interval.tv_sec == 0 && interval.tv_usec <= 0))
+			{
+				interval.tv_sec = 0;
+				interval.tv_usec = 100;
+			}
+			setsockopt(handle->sk, SOL_SOCKET, SO_RCVTIMEO, (char *)&interval, sizeof(struct timeval));
+		}else if (dir == POLLOUT){
+			struct timeval interval = {timeout_ms / 1000, (timeout_ms % 1000) * 1000};
+			if (interval.tv_sec < 0 || (interval.tv_sec == 0 && interval.tv_usec <= 0))
+			{
+				interval.tv_sec = 0;
+				interval.tv_usec = 100;
+			}
+			setsockopt(handle->sk, SOL_SOCKET, SO_SNDTIMEO, (char *)&interval, sizeof(struct timeval));
+		}
+#else
 
-        int ret = 0;
         struct pollfd pfd;
         memset(&pfd,0,sizeof(pfd));
 
@@ -36,7 +66,7 @@ static int Jtt808PollReadOrWrite(jtt808handle_t* handle,int dir,int ptime)
         }else if (ret == 0){ // timeout
                 ret = 1;
         }
-
+#endif
         return ret;
 }
 
@@ -89,7 +119,7 @@ void Jtt808CloseSocket(jtt808handle_t* handle)
 {
 	if (handle->sk > -1){
 #if ARMGCC
-		closeSocket(handle->sk);
+		closesocket(handle->sk);
 #else
 		close(handle->sk);
 #endif

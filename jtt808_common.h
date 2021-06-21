@@ -1,16 +1,30 @@
 #ifndef  JTT808_COMMON__H
 #define  JTT808_COMMON__H
+#define ARMGCC 1
+#if ARMGCC
+#define NET_CYCLONE 1
+#define NET_LWIP 1
+#endif
 
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
-#include <arpa/inet.h>
-#include <sys/types.h>
-#include <errno.h>
-#include <unistd.h>
 #include <time.h>
-#include <signal.h>
+#include <stdlib.h>
+#include <unistd.h>
+#if ARMGCC
+#if NET_CYCLONE
+#include "core/bsd_socket.h"
+#include "core/net.h"
+#endif
+#else
+#include <arpa/inet.h>
 #include <poll.h>
+#include <errno.h>
+#endif
+#include <sys/types.h>
+#include <unistd.h>
+#include <signal.h>
 
 // for test
 #define JTT808_TEST_IP "192.168.5.7"
