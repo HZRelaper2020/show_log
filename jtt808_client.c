@@ -1,3 +1,5 @@
+#if USE_OLD_NETCLINET  // no used
+
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
@@ -515,3 +517,5 @@ int main()
 
 	return 0;
 }
+
+#endif
