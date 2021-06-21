@@ -1,6 +1,8 @@
 #ifndef  JTT808_COMMON__H
 #define  JTT808_COMMON__H
+
 #define ARMGCC 1
+
 #if ARMGCC
 #define NET_CYCLONE 1
 #define NET_LWIP 1
