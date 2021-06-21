@@ -38,6 +38,11 @@ class Jtt808ClientThread(threading.Thread):
         self.multi_packet_list=[]
         # 保存及绘图
         self.savedraw = jtt808_save_draw.Jtt808SaveDraw()
+        # force quit
+        self.force_quit = 0
+        
+    def do_force_quit(self):
+        self.force_quit = 1
         
     def set_net_params(self,retry,hearttime,timeout):
         self.retry = retry
@@ -120,7 +125,9 @@ class Jtt808ClientThread(threading.Thread):
                     
                 if self.socket_is_closed: # 已经关闭                    
                     removeself = 1
-                
+                if self.force_quit:
+                    removeself = 1
+                    
                 if removeself:
                     try:
                         del self.savedraw
@@ -237,9 +244,10 @@ class Jtt808ClientThread(threading.Thread):
                     self.send_one_packet(header,reply)
                     break
                 except:
-                    self.sk.settimeout(self.timeout*retry)
+                    timeout = (retry+1)*timeout
+                    self.sk.settimeout(timeout)
             
-            self.sk.settimeout(timeout)
+            self.sk.settimeout(self.timeout)
         
     def process_action_position(self,header,payload):
         reply = jtt808_reply.Jtt808Reply()

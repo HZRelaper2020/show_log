@@ -53,7 +53,12 @@ def main():
         elif inputchar == 'c':
             drawer.clear_all()
             inputchar = None 
+        elif inputchar == 'd':
+            for client in server.get_clients():
+                client.do_force_quit()
                 
+            inputchar = None
+            
         plt.pause(0.005)
         
         old_inputchar = inputchar
