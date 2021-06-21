@@ -6,6 +6,19 @@
 * 传输三轴传感器数据
 * 传输六轴传感器数据
 
+#### 客户端使用(C语言)
+* 拷贝.c及.h文件，并 include此目录，以便包含.h文件
+* linux或arm (jtt808_common.h 第三行 ARMGCC 1就是选择arm)
+* jtt808_action.c下面有个main函数，里面有注册等一系列test,填写相应的结构体即可
+   *  注册是根据 终端ID(terminalId)进行注册的
+   *  心跳包， Jtt808SendActionSendHeartPacket()
+   *   gps,填写 jtt808position_t结构体,调用 Jtt808DoActionSendPosition
+   *  加速度，填写 jtt808accleration?结构体, ? 可以是A1或C1
+
+
+#### 服务器 (python)
+* py jtt808_main.py
+
 
 <br/><br/><br/><br/><br/><br/>
 ### client.py 解析log数据
