@@ -213,7 +213,7 @@ class Jtt808ClientThread(threading.Thread):
                 tpyalod += payload
                 
             if pkgnum == pkgcount:
-                self.process_one_packet(one,tpyalod)
+                self.recv_one_packet(one,tpyalod)
                 
     def recv_one_packet(self,header,payload):                
         reply = None
@@ -234,6 +234,9 @@ class Jtt808ClientThread(threading.Thread):
             elif header.msgid == 0xE002: # acceleration c1
                 header.msgid = 0x8001
                 reply = self.process_action_acceleration_c1(header,payload)
+            elif header.msgid == 0xE003:  # other data save it
+                header.msgid = 0x8001
+                reply = self.process_action_otherdata(header,payload)
                 
         if reply:
             retry = 0
@@ -248,6 +251,10 @@ class Jtt808ClientThread(threading.Thread):
                     self.sk.settimeout(timeout)
             
             self.sk.settimeout(self.timeout)
+    
+    def process_action_otherdata(self,header,payload):
+        self.savedraw.process_other_data(payload)
+        return self.get_common_reply(header,0)
         
     def process_action_position(self,header,payload):
         reply = jtt808_reply.Jtt808Reply()
