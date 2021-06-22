@@ -13,6 +13,7 @@ class Jtt808SaveDraw():
         self.fd_position = None
         self.fd_acceleration_a1 = None
         self.fd_acceleration_c1 = None
+        self.fd_other = None
         
         self.save_file_dir = "data"
         
@@ -28,7 +29,10 @@ class Jtt808SaveDraw():
         if self.fd_acceleration_c1:
             self.fd_acceleration_c1.close()
             self.fd_acceleration_c1 = None
-                        
+        if self.fd_other:
+            self.fd_other.close()
+            self.fd_other = None
+            
     def set_client_id(self,clientid):
         tempstr = ""
         for i in clientid:
@@ -37,7 +41,19 @@ class Jtt808SaveDraw():
         
     def get_create_filename(self,param):
         return (self.save_file_dir+"/" + datetime.datetime.now().strftime('%Y_%m_%d__%H_%M_%S')+"_%s__"+self.clientid+".txt")%param
+
+    def process_other_data(self,payload):
+        if not self.fd_other:
+            self.fd_other = open(self.get_create_filename("other"),"wb")
+        islast = payload[0]
+        payload = payload[30:]
         
+        self.fd_other.write(payload)
+        print(len(payload),islast)
+        if islast:
+            self.fd_other.close()
+            self.fd_other = None
+            
     def process_position_data(self,payload): 
         gps = jtt808_structs.GpsStruct(payload)        
         

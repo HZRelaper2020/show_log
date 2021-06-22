@@ -100,3 +100,7 @@ class AcclerationC1Struct():
     def get_time(self):
         return (self.time[3]*3600+ self.time[4]*60+ self.time[5])*1000 + self.millisecond
     
+class OtherDataStruct():
+    def __init__(self,payload):
+        self.data = payload
+        
