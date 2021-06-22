@@ -34,6 +34,7 @@ jtt808err_t Jtt808BasicCheckSendRecv(jtt808header_t* sendheader,uint8_t* recvbuf
 			case JTT808_MSGID_SEND_POSITION:
 			case JTT808_MSGID_SEND_ACCELRATION_A1:
 			case JTT808_MSGID_SEND_ACCELRATION_C1:
+			case JTT808_MSGID_SEND_OTHER_DATA:
 				if (r->msgId == 0x8001){
 				}else{
 					ret = err_msg_id_not_matched;

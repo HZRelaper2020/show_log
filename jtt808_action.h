@@ -13,6 +13,9 @@ jtt808err_t Jtt808DoActionSendAccelerationA1(jtt808handle_t* handle,jtt808header
 
 jtt808err_t Jtt808DoActionSendAccelerationC1(jtt808handle_t* handle,jtt808header_t* header,jtt808accelerationC1_t* acce);
 
+jtt808err_t Jtt808DoActionSendOtherData(jtt808handle_t* handle,jtt808header_t* header,jtt808otherData_t * other);
+
+
 #endif
 
 

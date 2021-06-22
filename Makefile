@@ -1,6 +1,10 @@
 
 sources= jtt808_send_recv_packet.c jtt808_netutil.c  jtt808_convert.c jtt808_action.c jtt808_basic_check.c
 
+test_other_data:
+	gcc $(sources) -g -DJTT808_TEST_REGISTER=1 -DJTT808_TEST_PRINT_SEND_PACKET=1 -DJTT808_TEST_SEND_OTHER_DATA=1
+	./a.out
+
 test_accelration_c1:
 	gcc $(sources) -g -DJTT808_TEST_REGISTER=1 -DJTT808_TEST_PRINT_SEND_PACKET=1 -DJTT808_TEST_SEND_ACCELERATION_C1=1
 	./a.out

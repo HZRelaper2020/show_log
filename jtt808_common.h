@@ -53,12 +53,14 @@
 #define JTT808_MSGID_SEND_POSITION		0x0200
 #define JTT808_MSGID_SEND_ACCELRATION_A1	0xE001
 #define JTT808_MSGID_SEND_ACCELRATION_C1	0xE002
+#define JTT808_MSGID_SEND_OTHER_DATA		0xE003
 
 
 #pragma pack(1)
 
 typedef enum jtt808Err{
 	err_ok = 0,
+	err_buffer_exceed,
 	err_send_failed,
 	err_recv_failed,
 	err_exceed_max_recvlen,
@@ -213,6 +215,14 @@ typedef struct jtt808accelerationC1{
 	uint16_t gyroy;
 	uint16_t gyroz;
 }jtt808accelerationC1_t;
+
+typedef struct jtt808otherData{
+	uint8_t isLastOne;
+	uint16_t type;
+	uint16_t dataLength;
+	uint8_t reserved[25];
+	uint8_t data[4096];
+}jtt808otherData_t;
 
 #pragma pack()
 

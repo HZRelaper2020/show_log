@@ -287,6 +287,49 @@ jtt808err_t Jtt808DoActionSendAccelerationC1(jtt808handle_t* handle,jtt808header
 
         return ret;
 }
+/*
+ *
+ *
+ * send other data like file
+ *
+ */
+jtt808err_t Jtt808DoActionSendOtherData(jtt808handle_t* handle,jtt808header_t* header,jtt808otherData_t * other)
+{
+        jtt808err_t ret = err_ok;
+        uint8_t* sendPayload = (uint8_t*)other;
+        int sendPayloadSize = sizeof(jtt808otherData_t) - (sizeof(other->data) -other->dataLength) ;
+        uint8_t recvbuf[1514*2];
+        int recvlen;
+	
+	if (other->dataLength > sizeof(other->data)){
+		ERROR(("buffer is too big"));
+		return err_buffer_exceed;
+	}
+
+        header->msgId = JTT808_MSGID_SEND_OTHER_DATA;
+
+        DO_SEND_RECV_CHECK(sendPayload,sendPayloadSize,recvbuf,recvlen);
+
+        if (ret == err_ok){
+                int bodyIndex = Jtt8080GetRawDataBodyIndex(recvbuf,recvlen);
+                uint8_t value = recvbuf[bodyIndex+4];
+                if (value == 0){
+                        // ok
+                }else if (value == 1){
+                        ret = err_commonreply_failed;
+                }else if (value == 2){
+                        ret = err_commonreply_msgwrong;
+                }else if (value == 3){
+                        ret = err_commonreply_nosupported;
+                }else if (value == 4){
+                        ret = err_commonreply_inprocess;
+                }else{
+                        ret = err_commonreply_unsupportedcode;
+                }
+        }
+
+        return ret;
+}
 #if JTT808_TEST_REGISTER || JTT808_TEST_SEND_HEART_PACKET
 int main()
 {
@@ -409,6 +452,42 @@ int main()
                 PRINT(("send acceleration C1 result:%d \n",err));
                 sleep(1);
         }
+#endif
+
+#if JTT808_TEST_SEND_OTHER_DATA
+	for (int i=0;i<1;i++){
+		jtt808otherData_t other;
+		static uint32_t testdata[1024*1024];
+		for (int j=0;j<sizeof(testdata)/sizeof(testdata[0]);j++){
+			testdata[j] = j;
+		}
+
+
+#if JTT808_TEST_SEND_OTHER_DATA_SINGLE
+			other.dataLength = 300;
+			other.isLastOne = 1;
+			other.type = 0;
+			memcpy(other.data ,(uint8_t*)testdata ,other.dataLength);
+			err=Jtt808DoActionSendOtherData(handle,&header,&other);
+			PRINT(("send otherdata  result:%d \n",err));
+#endif
+		int addlen = 0;
+		for (int k=0;k<5;k++){
+			other.dataLength = 4096;
+			other.type = 0;
+
+			if (k == 4)
+				other.isLastOne = 1;
+			else
+				other.isLastOne = 0;
+
+			memcpy(other.data ,(uint8_t*)testdata + addlen,other.dataLength);
+			err=Jtt808DoActionSendOtherData(handle,&header,&other);
+
+			addlen += other.dataLength;
+			PRINT(("send otherdata  result:%d \n",err));
+		}
+	}
 #endif
 
 	Jtt808CloseSocket(handle);
