@@ -5,25 +5,11 @@ import numpy as np
 import re
 import logging
 import v2_common as util
+import _thread
 
-def my_plt():
-
-
-    # plt.axis([0, 100, 0, 1])
-    plt.xlim(0,30)
-    # plt.ylim(0,30)
-    plt.ion()
-
-    while True:
-        data = read_data.read_3zhou_packet()    
-        if not data:
-            continue
-        
-        
-        plt.plot(xs, ys)
-        plt.pause(0.1)
-        
+plot_x_start = 0
 def plot_data(data):
+    global plot_x_start
     data = bytes(data)
     curlen = 0
     
@@ -43,15 +29,33 @@ def plot_data(data):
         y.append(unit.y)
         z.append(unit.z)
         st.append(unit.status)
-    plt.plot(t,x)
-    plt.plot(t,y)
-    plt.plot(t,z)
-    plt.plot(t,st)
+        
+        max_time = 1000*10
+        if plot_x_start == 0:
+            plot_x_start = unit.time
+            plt.legend()
+        elif unit.time > plot_x_start + max_time:
+            plot_x_start = unit.time
+            # plt.xlim((plot_x_start,plot_x_start + max_time))
+            plt.clf()
+        
+    plt.plot(t,x,label="x")
+    plt.plot(t,y,label= "y")
+    plt.plot(t,z,label = "z")
+    plt.plot(t,st,label = "status")
     
     util.save_file(lista1,"a+")
     util.save_file(listc2,"a+")
     
+def get_input_char():
+    while True:
+        c = input()
+        if not c:
+            os.kill(os.getpid(),-9)
+
 def main():
+    _thread.start_new_thread(get_input_char,())
+    
     filename = sys.argv[1]
     fd = open(filename)
     fd.seek(0,2)
@@ -91,7 +95,8 @@ def main():
                             exit(0)
                         else:
                             serialno = new_serialno
-                            
+                    print("main serialno",serialno,"bodylen",bodylen)
+                    
                     fd.readline() # ignore \n
                     
                     tempdata = ""
@@ -127,7 +132,7 @@ def main():
                     break
                     
             if isfind:
-                print("serialno",serialno,"bodylen",bodylen)
+                print("find serialno",serialno,"bodylen",bodylen)
                 data = ldata[20:1024]
                 # util.print_data(data)
                 ldata = ldata[1024:]
