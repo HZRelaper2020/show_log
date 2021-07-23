@@ -81,8 +81,17 @@ def main():
                     bodylen = int(re.search("\d+",bdtxt)[0])
                                              
                     serialtxt = re.search("serialNO\[(\d+)\]",line)[0]
-                    serialno = int(re.search("\d+",serialtxt)[0])                                        
-                    
+                    new_serialno = int(re.search("\d+",serialtxt)[0])                                        
+                    if serialno == 0:
+                        serialno = new_serialno
+                    else:
+                        if serialno + 1 != new_serialno:
+                            logging.error("serail no not ok before %d after %d",serialno,new_serialno)
+                            ldata.clear()
+                            exit(0)
+                        else:
+                            serialno = new_serialno
+                            
                     fd.readline() # ignore \n
                     
                     tempdata = ""
@@ -108,7 +117,7 @@ def main():
             curpos = fd.tell()            
             fd.close()
             
-        while len(ldata) >= 1024:        
+        if len(ldata) >= 1024:        
             # find “repEDR”  0X72 0X65 0X70 0X45 0X44 0X52
             finddata = [0X72,0X65,0X70,0X45,0X44,0X52]
             isfind = 1
@@ -118,10 +127,10 @@ def main():
                     break
                     
             if isfind:
-                print(serialno,bodylen)
+                print("serialno",serialno,"bodylen",bodylen)
                 data = ldata[20:1024]
-                util.print_data(data)
-                ldata = ldata[1024:]               
+                # util.print_data(data)
+                ldata = ldata[1024:]
                 plot_data(data)
                 tot_pkg_count += 1
                 
@@ -136,7 +145,7 @@ def main():
                 if not find_identify:
                     ldata.clear()
                     
-                break
+                # break
             
         plt.pause(0.01)
         
