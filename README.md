@@ -1,4 +1,13 @@
 ## 演示版（画图只能连接一个客户端)
+### v2 版
+* 解析文件 
+    * py v2_decode_data.py hex文件
+    * 保存文件名会打印出来
+* 画图   py v2_draw_data.py 解析出来的文件
+* 实时数据传输 py v2_draw_dynamic.py log文件
+
+<br/><br/><br/><br/>
+
 ### jtt808开头的都是关于jtt808协议的
 #### 基础功能
 * 注册
