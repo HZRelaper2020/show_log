@@ -34,10 +34,10 @@ class StructA1():
             logging.error("a1 data len failed %d",len(data))
             exit(0)
                     
-        self.time = to_uint(data[0:4],4)
-        self.x = to_uint(data[4:5],1,1)
-        self.y = to_uint(data[5:6],1,1)
-        self.z = to_uint(data[6:7],1,1)
+        self.time = to_uint(data[0:4],4) - 127
+        self.x = to_uint(data[4:5],1) - 127
+        self.y = to_uint(data[5:6],1) - 127
+        self.z = to_uint(data[6:7],1) - 127
         self.status = to_uint(data[7:8],1)
         
     def to_string(self,hasattribute=0):

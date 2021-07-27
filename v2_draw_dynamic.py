@@ -51,6 +51,7 @@ def get_input_char():
     while True:
         c = input()
         if not c:
+            print("kill by user")
             os.kill(os.getpid(),-9)
 
 def main():
@@ -66,17 +67,20 @@ def main():
     
     ldata = []
     tot_pkg_count =0
+    pkg_number = 0
     while (True):
 
         bodylen = 0
         serialno = 0
         
+        setting_ignore_serail_no = 0
         if os.stat(filename).st_mtime != mtime:
             mtime = os.stat(filename).st_mtime
             fd = open(filename,encoding='gbk')
             fd.seek(curpos,0)
             
             while True:
+                serail_number_equal = 0 # judge serial number is equal
                 line = fd.readline()       
                 if not line:
                     break
@@ -88,11 +92,15 @@ def main():
                     new_serialno = int(re.search("\d+",serialtxt)[0])                                        
                     if serialno == 0:
                         serialno = new_serialno
-                    else:
+                    else:                        
                         if serialno + 1 != new_serialno:
                             logging.error("serail no not ok before %d after %d",serialno,new_serialno)
                             ldata.clear()
-                            exit(0)
+                            if setting_ignore_serail_no and serailno == new_serialno:
+                                serail_number_equal = 1
+                                break
+                            else:
+                                exit(0)
                         else:
                             serialno = new_serialno
                     print("main serialno",serialno,"bodylen",bodylen)
@@ -116,8 +124,9 @@ def main():
                     
                     tempdata = tempdata[12:] # remove jtt808 header
                     
-                    for unit in tempdata:                       
-                        ldata.append(int(unit,16))
+                    for unit in tempdata:
+                        if not serail_number_equal:
+                            ldata.append(int(unit,16))
                         
             curpos = fd.tell()            
             fd.close()
@@ -132,7 +141,8 @@ def main():
                     break
                     
             if isfind:
-                print("find serialno",serialno,"bodylen",bodylen)
+                pkg_number = ldata[0] + (ldata[1]<<8) + (ldata[2]<<16) + (ldata[3]<<24)
+                print("find serialno",serialno,"bodylen",bodylen,"pkg_number",pkg_number)
                 data = ldata[20:1024]
                 # util.print_data(data)
                 ldata = ldata[1024:]
@@ -144,8 +154,9 @@ def main():
                 find_identify = False
                 for i in range(0,len(ldata)-len(finddata)):
                     if ldata[i:i+6] == finddata:                        
-                        ldata = [0xaa,0xaa,0xaa,0xaa,0xaa,0xaa,0xaa,0xaa,0xaa,0xaa,0xaa,0xaa] + ldata[i:]                        
+                        ldata = [0x0,0x0,0x0,0x0,0xaa,0xaa,0xaa,0xaa,0xaa,0xaa,0xaa,0xaa] + ldata[i:]                        
                         find_identify = True
+                        pkg_number = 0
                         break
                 if not find_identify:
                     ldata.clear()
