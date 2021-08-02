@@ -33,16 +33,16 @@ def plot_data(data):
         max_time = 1000*10
         if plot_x_start == 0:
             plot_x_start = unit.time
-            plt.legend()
+            #plt.legend()
         elif unit.time > plot_x_start + max_time:
             plot_x_start = unit.time
             # plt.xlim((plot_x_start,plot_x_start + max_time))
             plt.clf()
         
-    plt.plot(t,x,label="x")
-    plt.plot(t,y,label= "y")
-    plt.plot(t,z,label = "z")
-    plt.plot(t,st,label = "status")
+    plt.plot(t,x)
+    #plt.plot(t,y,label= "y")
+    #plt.plot(t,z,label = "z")
+    #plt.plot(t,st,label = "status")
     
     util.save_file(lista1,"a+")
     util.save_file(listc2,"a+")
@@ -55,6 +55,7 @@ def get_input_char():
             os.kill(os.getpid(),-9)
 
 def main():
+    
     _thread.start_new_thread(get_input_char,())
     
     filename = sys.argv[1]
@@ -84,10 +85,7 @@ def main():
                 line = fd.readline()       
                 if not line:
                     break
-                if line.find("[0x0900]") > -1:                   
-                    bdtxt = re.search("bodyLen\[(\d+)\]",line)[0]                    
-                    bodylen = int(re.search("\d+",bdtxt)[0])
-                                             
+                if line.find("serialNO") > -1:
                     serialtxt = re.search("serialNO\[(\d+)\]",line)[0]
                     new_serialno = int(re.search("\d+",serialtxt)[0])                                        
                     if serialno == 0:
@@ -102,31 +100,37 @@ def main():
                             else:
                                 exit(0)
                         else:
-                            serialno = new_serialno
-                    print("main serialno",serialno,"bodylen",bodylen)
-                    
-                    fd.readline() # ignore \n
-                    
-                    tempdata = ""
-                    while True:
-                        onedata = fd.readline()
-                        if  not onedata:
-                            break
-                        if not onedata.startswith("【"):
-                            break
-                        tempdata += onedata
+                            serialno = new_serialno               
+                            
+                            
+                    if line.find("[0x0900]") > -1:                   
+                        bdtxt = re.search("bodyLen\[(\d+)\]",line)[0]                    
+                        bodylen = int(re.search("\d+",bdtxt)[0])                                                
                         
-                    # tempdata = fd.read(1024*100)
-                                        
-                    tempdata = re.compile("【\d+】").sub(" ",tempdata)
-                    tempdata = tempdata.replace("—"," ")
-                    tempdata = tempdata.split()
-                    
-                    tempdata = tempdata[12:] # remove jtt808 header
-                    
-                    for unit in tempdata:
-                        if not serail_number_equal:
-                            ldata.append(int(unit,16))
+                        print("main serialno",serialno,"bodylen",bodylen)
+                        
+                        fd.readline() # ignore \n
+                        
+                        tempdata = ""
+                        while True:
+                            onedata = fd.readline()
+                            if  not onedata:
+                                break
+                            if not onedata.startswith("【"):
+                                break
+                            tempdata += onedata
+                            
+                        # tempdata = fd.read(1024*100)
+                                            
+                        tempdata = re.compile("【\d+】").sub(" ",tempdata)
+                        tempdata = tempdata.replace("—"," ")
+                        tempdata = tempdata.split()
+                        
+                        tempdata = tempdata[12:] # remove jtt808 header
+                        
+                        for unit in tempdata:
+                            if not serail_number_equal:
+                                ldata.append(int(unit,16))
                         
             curpos = fd.tell()            
             fd.close()
