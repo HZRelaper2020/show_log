@@ -4,7 +4,7 @@
     * py v2_decode_data.py hex文件
     * 保存文件名会打印出来
 * 画图   py v2_draw_data.py 解析出来的文件
-* 实时数据传输 py v2_draw_dynamic.py log文件
+* 实时数据传输 py v2_draw_dynamic_script.py log文件
 
 <br/><br/><br/><br/>
 
