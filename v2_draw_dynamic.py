@@ -8,8 +8,11 @@ import v2_common as util
 import _thread
 
 plot_x_start = 0
+plot_tmp_count =  0
+
 def plot_data(data):
     global plot_x_start
+    global plot_tmp_count
     data = bytes(data)
     curlen = 0
     
@@ -23,23 +26,30 @@ def plot_data(data):
     z=[]
     st = []
     t = []
+
     for unit in lista1:
         t.append(unit.time)
         x.append(unit.x+10)
         y.append(unit.y)
-        z.append(unit.z-10)
+        z.append(unit.z-10)        
         #st.append(unit.status)
         
-        max_time = 1000*10
-        if plot_x_start == 0:
-            plot_x_start = unit.time
-            #plt.legend()
-        elif unit.time > plot_x_start + max_time:
-            plot_x_start = unit.time
-            # plt.xlim((plot_x_start,plot_x_start + max_time))
-            plt.clf()
-            
-    plt.ylim(-30,30)    
+        # max_time = 1000*10
+        # if plot_x_start == 0:
+            # plot_x_start = unit.time
+            # #plt.legend()
+        # elif unit.time > plot_x_start + max_time:
+            # plot_x_start = unit.time
+            # # plt.xlim((plot_x_start,plot_x_start + max_time))
+            # plt.clf()
+    max_number = 1000*5
+    plot_tmp_count += len(lista1)
+    if plot_tmp_count > max_number:
+        plot_tmp_count = 0
+        print("1111111111111111111111111111111111111111111111111111111111111111111111111")
+        plt.clf()
+        
+    plt.ylim(-30,30)
     plt.plot(t,x)
     plt.plot(t,y,label= "y")
     #plt.plot(t,z,label = "z")
@@ -51,8 +61,8 @@ def plot_data(data):
 def get_input_char():
     while True:
         c = input()
-        if not c:
-            print("kill by user") 
+        if c=" ":
+            print("kill by user")
             # exit(0)
             os.kill(os.getpid(),-9)
 
@@ -63,7 +73,7 @@ def draw_dynamic(filename):
     fd = open(filename)
     fd.seek(0,2)
     curpos = fd.tell()
-    fd.close()    
+    fd.close()
     
     mtime = os.stat(filename).st_mtime
     

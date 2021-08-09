@@ -17,5 +17,6 @@ def main():
             main_app.draw_dynamic(sys.argv[1])
         except Exception as e:
             print("catch exception",e)
+            logging.error(str(e))
     
 main()
