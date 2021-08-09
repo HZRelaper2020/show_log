@@ -25,10 +25,10 @@ def plot_data(data):
     t = []
     for unit in lista1:
         t.append(unit.time)
-        x.append(unit.x)
+        x.append(unit.x+10)
         y.append(unit.y)
-        z.append(unit.z)
-        st.append(unit.status)
+        z.append(unit.z-10)
+        #st.append(unit.status)
         
         max_time = 1000*10
         if plot_x_start == 0:
@@ -38,9 +38,10 @@ def plot_data(data):
             plot_x_start = unit.time
             # plt.xlim((plot_x_start,plot_x_start + max_time))
             plt.clf()
-        
+            
+    plt.ylim(-30,30)    
     plt.plot(t,x)
-    #plt.plot(t,y,label= "y")
+    plt.plot(t,y,label= "y")
     #plt.plot(t,z,label = "z")
     #plt.plot(t,st,label = "status")
     
@@ -51,14 +52,14 @@ def get_input_char():
     while True:
         c = input()
         if not c:
-            print("kill by user")
+            print("kill by user") 
+            # exit(0)
             os.kill(os.getpid(),-9)
 
-def main():
-    
+def draw_dynamic(filename):
+    logging.basicConfig(filename="err.log",filemode="a+")
     _thread.start_new_thread(get_input_char,())
     
-    filename = sys.argv[1]
     fd = open(filename)
     fd.seek(0,2)
     curpos = fd.tell()
@@ -92,16 +93,11 @@ def main():
                         serialno = new_serialno
                     else:                        
                         if serialno + 1 != new_serialno:
-                            logging.error("serail no not ok before %d after %d",serialno,new_serialno)
+                            logging.error("serail number wrong before %d after %d",serialno,new_serialno)
                             ldata.clear()
-                            if setting_ignore_serail_no and serailno == new_serialno:
-                                serail_number_equal = 1
-                                break
-                            else:
-                                exit(0)
+                            util.exit_app(0)
                         else:
-                            serialno = new_serialno               
-                            
+                            serialno = new_serialno                                   
                             
                     if line.find("[0x0900]") > -1:                   
                         bdtxt = re.search("bodyLen\[(\d+)\]",line)[0]                    
@@ -168,5 +164,8 @@ def main():
                 # break
             
         plt.pause(0.01)
-        
-main()
+
+# def main():
+    # draw_dynamic(sys.argv[1])
+    
+# main()

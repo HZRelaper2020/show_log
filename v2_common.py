@@ -2,6 +2,7 @@ import os
 import struct
 import logging
 import sys
+import matplotlib.pyplot as plt
 
 PKGSIZE = 1024
 
@@ -19,20 +20,28 @@ def to_uint(data,size,isnegative = 0):
 
 def print_data(data):
 
-    
+    oneline = ""
     for i in range(0,len(data)):
         if i%16 == 0:
-            print("%08x "%(i),end="")
-        print("%02x "%data[i],end="")
+            oneline +="%08x "%(i)
+        
+        oneline += "%02x "%data[i]
         if i%16 == 15:
-            print("")
-    print("\n\n")
+            logging.error(oneline)
+            oneline = ""
+            
+    logging.error(" \n")
+
+def exit_app(code=0):
+    plt.clf()
+    raise Exception("my exception")
+    # exit(code)
     
 class StructA1():
     def __init__(self,data):
         if len(data) != 8:
             logging.error("a1 data len failed %d",len(data))
-            exit(0)
+            exit_app(0)
                     
         self.time = to_uint(data[0:4],4) - 127
         self.x = to_uint(data[4:5],1) - 127
@@ -53,7 +62,7 @@ class StructC1():
     def __init__(self,data):
         if len(data) != 36:
             logging.error("c1 data len failed %d",len(data))
-            exit(0)
+            exit_app(0)
         # self.eventtype = to_uint(data[0:2],2)
         # self.time = []
         # for i in range(0,6):
@@ -71,7 +80,7 @@ class StructC2():
     def __init__(self,data):
         if len(data) != 28:
             logging.error("c2 data len failed %d",len(data))
-            exit(0)
+            exit_app(0)
                         
         self.time = to_uint(data[0:4],4)
         self.lat = to_uint(data[4:8],4)
@@ -157,7 +166,7 @@ def read_structs(data,curpos,lista1,listc1,listc2):
             else:
                 logging.error("not supported type:0x%x curpos:0x%x",structtype,curpos+curlen)
                 print_data(data)
-                exit(0)
+                exit_app(0)
                 
         curlen += totlen + 4 
-        
+       
