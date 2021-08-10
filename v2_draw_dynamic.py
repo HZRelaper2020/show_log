@@ -61,7 +61,7 @@ def plot_data(data):
 def get_input_char():
     while True:
         c = input()
-        if c=" ":
+        if c==" ":
             print("kill by user")
             # exit(0)
             os.kill(os.getpid(),-9)
