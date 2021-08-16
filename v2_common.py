@@ -18,8 +18,72 @@ def to_uint(data,size,isnegative = 0):
     elif size  == 4:
         return struct.unpack("<I",data)[0]
 
-def print_data(data):
+def text_read_param():
+    fd = open("1.txt")
+    times = 0
+    oldticks = 0
+    
+    start_count = 0
+    while True:
+        times += 1
+        line = fd.readline()
+        if not line:
+            break   
+        line=line.strip()
+        if not line:
+            continue
+            
+        line = line.split(";")
+        line = line[0]
+        
+        stype = line.split()[0]
+        sname = line.split()[1].split("[")[0]
+        snumber = 1
+        if line.find("[") > -1:
+            txt = str(eval(re.search("\[(.*)\]",line)[0]))   
+            snumber = int(re.search("\d+",txt)[0])
+        # print("%-10s %-15s %-10d"%(stype,sname,snumber))
+        
+        
+        stype = stype.lower()
+        sname = sname.lower()
+        
+        perbyte = 0
+        pstr = ""
+        if stype == "uint8_t":
+            perbyte = 1
+            if snumber == 1:
+                pstr = "self.%s = to_uint(data[%d:%d],%d)"%(sname,start_count,start_count+perbyte,perbyte)                
+            else:
+                pstr = "self.%s = data[%d:%d]"%(sname,start_count,start_count+snumber)
+            
+        elif stype == "uint16_t":
+            perbyte = 2
+            if snumber == 1:
+                pstr = "self.%s = to_uint(data[%d:%d],%d)"%(sname,start_count,start_count+perbyte,perbyte)                
+            else:
+                print("not supoorted uint16 array")
+                exit(0)
+            
+        elif stype == "uint32_t":
+            perbyte = 4
+            if snumber == 1:
+                pstr = "self.%s = to_uint(data[%d:%d],%d)"%(sname,start_count,start_count+perbyte,perbyte)                
+            else:
+                print("not supoorted uint32 array")
+                exit(0)            
+        else:
+            print("not supported type")
+            break
+        
+        start_count += perbyte * snumber
+        print(pstr)
+        
+    fd.close()
+    
+def print_data(data,perr=1):
 
+    totline = ""
     oneline = ""
     for i in range(0,len(data)):
         if i%16 == 0:
@@ -27,10 +91,17 @@ def print_data(data):
         
         oneline += "%02x "%data[i]
         if i%16 == 15:
-            logging.error(oneline)
+            if perr:
+                logging.error(oneline)
+            else:
+                totline += oneline + "\n"
             oneline = ""
-            
-    logging.error(" \n")
+    
+    if perr:
+        logging.error(" \n")
+    
+    if not perr:
+        return totline
 
 def exit_app(code=0):
     plt.clf()
@@ -57,6 +128,66 @@ class StructA1():
     
     def get_type(self):
         return "A1"
+
+class StructA3():
+    def __init__(self,data):
+        if len(data) != 332:
+            logging.error("c3 data len failed %d",len(data))
+            exit_app(0)
+        
+        # check sum        
+        self.chksum = to_uint(data[0:2],2)
+        self.acc_x = data[2:128]
+        self.acc_y = data[128:254]
+        self.delta_vx = data[254:280]
+        self.delta_vy = data[280:306]
+        self.max_delta_vx = to_uint(data[306:307],1)
+        self.max_delta_vy = to_uint(data[307:308],1)
+        self.max_delta_vxy2 = to_uint(data[308:310],2)
+        self.event_set = to_uint(data[310:311],1)
+        self.event_lock = to_uint(data[311:312],1)
+        self.time_t0 = data[312:318]
+        self.t_end = to_uint(data[318:319],1)
+        self.t_max_delta_vx = to_uint(data[319:320],1)
+        self.tick_t0 = to_uint(data[320:324],4)
+        self.t_max_delta_vy = to_uint(data[324:325],1)
+        self.t_max_delta_vxy2 = to_uint(data[325:326],1)
+        self.t_flag_clip_x = to_uint(data[326:327],1)
+        self.t_flag_clip_y = to_uint(data[327:328],1)
+        
+    def to_string(self,hasattribute=0):
+        if hasattribute:
+            return ""
+        else:
+            totc = ""
+            totc += "acc_x \n"
+            totc += print_data(self.acc_x,perr = 0)
+            totc += " \n" + "acc_y" +"\n"
+            totc += print_data(self.acc_y,0)
+            totc += "\n" + "delta_vx"+"\n"
+            totc += print_data(self.delta_vx,0)
+            totc += "\n" + "delta_vy"+"\n"
+            totc += print_data(self.delta_vy,0)
+            totc +="\n" + "max_delta_vx 0x%x \n"%self.max_delta_vx
+            totc +="\n" + "max_delta_vy 0x%x \n"%self.max_delta_vy
+            totc +="\n" + "max_delta_vxy2 0x%x \n"%self.max_delta_vxy2
+            totc +="\n" + "event_set 0x%x \n"%self.event_set
+            totc +="\n" + "event_lock 0x%x \n"%self.event_lock
+            totc += "\n" + "time_t0"+"\n"
+            totc += print_data(self.time_t0,0)
+            totc +="\n" + "t_end 0x%x \n"%self.t_end
+            totc +="\n" + "t_max_delta_vx 0x%x \n"%self.t_max_delta_vx
+            totc +="\n" + "tick_t0 0x%x \n"%self.tick_t0
+            totc +="\n" + "t_max_delta_vy 0x%x \n"%self.t_max_delta_vy
+            totc +="\n" + "t_max_delta_vxy2 0x%x \n"%self.t_max_delta_vxy2
+            totc +="\n" + "t_flag_clip_x 0x%x \n"%self.t_flag_clip_x
+            totc +="\n" + "t_flag_clip_y 0x%x \n"%self.t_flag_clip_y
+            
+            totc += "next struct......................................................\n"
+            return totc
+    
+    def get_type(self):
+        return "A3"
         
 class StructC1():
     def __init__(self,data):
@@ -117,7 +248,7 @@ def save_file(liststructs,mode="w"):
         fd.close()
    
 def get_struct_count(stype,data):
-    if stype == 0xA1 or stype == 0xC2:
+    if stype == 0xA1 or stype == 0xC2 or stype == 0xA3:
         return data >> (2+8)
         
     tt = data>>(6+8) & 0x3
@@ -131,14 +262,14 @@ def get_struct_count(stype,data):
         return 50
         
 def get_struct_totlen(stype,data):
-    if stype == 0xA1 or stype == 0xC2:
+    if stype == 0xA1 or stype == 0xC2 or stype == 0xA3:
         return data & 0x03ff 
     else:
         return data & 0x3fff
     
 PKGSIZE = 1024
 
-def read_structs(data,curpos,lista1,listc1,listc2):
+def read_structs(data,curpos,lista1,listc1,listc2,lista3=None):
     curlen = 0
     packlen = len(data)
     while curlen < packlen:
@@ -150,13 +281,17 @@ def read_structs(data,curpos,lista1,listc1,listc2):
         structlen = totlen//structcount
         
         cur = curlen + 4
-        # print("curpos:0x%08x type:0x%04x totlen:0x%x count:0x%02x structlen:%d  0x%x"%(curpos+curlen, structtype,totlen,structcount,structlen,to_uint(data[curlen+2:curlen+4],2)))
+        #print("curpos:0x%08x type:0x%04x totlen:0x%x count:0x%02x structlen:%d  0x%x"%(curpos+curlen, structtype,totlen,structcount,structlen,to_uint(data[curlen+2:curlen+4],2)))
         for i in range(0,structcount):
             dev = None
             sdata = data[cur + i*structlen:cur +(i+1)*structlen]
             if structtype == 0xA1:
                 dev = StructA1(sdata)
                 lista1.append(dev)
+            elif structtype == 0xA3:
+                dev = StructA3(sdata)
+                if lista3 != None:
+                    lista3.append(dev)
             elif structtype == 0xC1:
                 dev = StructC1(sdata)
                 listc1.append(dev)
