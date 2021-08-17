@@ -130,11 +130,12 @@ class StructA1():
         return "A1"
 
 class StructA3():
-    def __init__(self,data):
+    def __init__(self,data,stype="A3"):
         if len(data) != 332:
             logging.error("c3 data len failed %d",len(data))
             exit_app(0)
         
+        self.stype = stype
         # check sum        
         self.chksum = to_uint(data[0:2],2)
         self.acc_x = data[2:128]
@@ -187,7 +188,7 @@ class StructA3():
             return totc
     
     def get_type(self):
-        return "A3"
+        return self.stype
         
 class StructC1():
     def __init__(self,data):
@@ -236,7 +237,7 @@ class StructC2():
         
 def save_file(liststructs,mode="w"):
     if liststructs:
-        fd = None
+        fd = None        
         for uint in liststructs:
             if fd == None:
                 fname = "struct_"+uint.get_type()+".txt"
@@ -248,7 +249,7 @@ def save_file(liststructs,mode="w"):
         fd.close()
    
 def get_struct_count(stype,data):
-    if stype == 0xA1 or stype == 0xC2 or stype == 0xA3:
+    if stype == 0xA1 or stype == 0xC2 or stype == 0xA3 or stype == 0xA2 or stype == 0xA4:
         return data >> (2+8)
         
     tt = data>>(6+8) & 0x3
@@ -262,14 +263,14 @@ def get_struct_count(stype,data):
         return 50
         
 def get_struct_totlen(stype,data):
-    if stype == 0xA1 or stype == 0xC2 or stype == 0xA3:
+    if stype == 0xA1 or stype == 0xC2 or stype == 0xA3 or stype == 0xA2 or stype == 0xA4:
         return data & 0x03ff 
     else:
         return data & 0x3fff
     
 PKGSIZE = 1024
 
-def read_structs(data,curpos,lista1,listc1,listc2,lista3=None):
+def read_structs(data,curpos,lista1,listc1,listc2,lista2=None,lista3=None,lista4=None):
     curlen = 0
     packlen = len(data)
     while curlen < packlen:
@@ -280,18 +281,25 @@ def read_structs(data,curpos,lista1,listc1,listc2,lista3=None):
         totlen = get_struct_totlen(structtype,to_uint(data[curlen+2:curlen+4],2))              
         structlen = totlen//structcount
         
-        cur = curlen + 4
-        #print("curpos:0x%08x type:0x%04x totlen:0x%x count:0x%02x structlen:%d  0x%x"%(curpos+curlen, structtype,totlen,structcount,structlen,to_uint(data[curlen+2:curlen+4],2)))
+        cur = curlen + 4        
         for i in range(0,structcount):
             dev = None
             sdata = data[cur + i*structlen:cur +(i+1)*structlen]
             if structtype == 0xA1:
                 dev = StructA1(sdata)
                 lista1.append(dev)
+            elif structtype == 0xA2:
+                dev = StructA3(sdata,"A2")
+                if lista2 != None:
+                    lista2.append(dev)
             elif structtype == 0xA3:
                 dev = StructA3(sdata)
                 if lista3 != None:
                     lista3.append(dev)
+            elif structtype == 0xA4:
+                dev = StructA3(sdata,"A4")
+                if lista4 != None:
+                    lista4.append(dev)
             elif structtype == 0xC1:
                 dev = StructC1(sdata)
                 listc1.append(dev)

@@ -17,7 +17,9 @@ def main():
     lista1 = []
     listc1 = []
     listc2 = []
+    lista2 = []
     lista3 = []
+    lista4 = []
     while True:
         onepack = fd.read(PKGSIZE)        
         
@@ -46,14 +48,16 @@ def main():
         # data process
         data = onepack[20:PKGSIZE]
              
-        util.read_structs(data,curpos,lista1,listc1,listc2,lista3)
+        util.read_structs(data,curpos,lista1,listc1,listc2,lista2=lista2,lista3=lista3,lista4=lista4)
         
         curpos += PKGSIZE-20
     fd.close()
     
     util.save_file(lista1)
     util.save_file(listc1)
-    util.save_file(listc2)
+    util.save_file(listc2)    
+    util.save_file(lista2)
     util.save_file(lista3)
+    util.save_file(lista4)
     
 main()

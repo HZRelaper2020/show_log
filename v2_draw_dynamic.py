@@ -19,7 +19,10 @@ def plot_data(data):
     lista1=[]
     listc1= []    
     listc2 = []
-    util.read_structs(data,0,lista1,listc1,listc2)
+    lista2 = []
+    lista3 = []
+    lista4 = []
+    util.read_structs(data,0,lista1,listc1,listc2,lista2 = lista2,lista3=lista3,lista4=lista4)
     # plot or print
     x=[]
     y=[]
@@ -32,31 +35,38 @@ def plot_data(data):
         x.append(unit.x+10)
         y.append(unit.y)
         z.append(unit.z-10)        
-        #st.append(unit.status)
-        
-        # max_time = 1000*10
-        # if plot_x_start == 0:
-            # plot_x_start = unit.time
-            # #plt.legend()
-        # elif unit.time > plot_x_start + max_time:
-            # plot_x_start = unit.time
-            # # plt.xlim((plot_x_start,plot_x_start + max_time))
-            # plt.clf()
+    # vx,vy -127    
     max_number = 1000*5
     plot_tmp_count += len(lista1)
+    
+    plt.figure(1)
+    # plt.subplot(1,2,1)
     if plot_tmp_count > max_number:
         plot_tmp_count = 0
-        print("1111111111111111111111111111111111111111111111111111111111111111111111111")
         plt.clf()
         
     plt.ylim(-30,30)
-    plt.plot(t,x)
+    plt.plot(t,x,label="x")
     plt.plot(t,y,label= "y")
-    #plt.plot(t,z,label = "z")
-    #plt.plot(t,st,label = "status")
+    
+    if lista3:
+        t = []
+        x = []
+        for unit in lista1:
+            for i,dx in enumerate(unit.delta_vx):            
+                t.append(i)
+                x.append(dx)
+        
+        plt.figure(2)
+        # plt.subplot(1,2,2)
+        plt.clf()
+        plt.plot(t,x,label="x")        
     
     util.save_file(lista1,"a+")
     util.save_file(listc2,"a+")
+    util.save_file(lista2,"a+")
+    util.save_file(lista3,"a+")
+    util.save_file(lista4,"a+")
     
 def get_input_char():
     while True:
