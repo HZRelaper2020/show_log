@@ -52,14 +52,17 @@ def plot_data(data):
     if lista3:
         t = []
         x = []
-        for unit in lista1:
+        start = 0
+        for unit in lista3:
             for i,dx in enumerate(unit.delta_vx):            
-                t.append(i)
-                x.append(dx)
+                t.append(start)
+                start += 1
+                x.append(dx-127)
         
         plt.figure(2)
         # plt.subplot(1,2,2)
-        plt.clf()
+        #plt.clf()
+        # print(t)
         plt.plot(t,x,label="x")        
     
     util.save_file(lista1,"a+")

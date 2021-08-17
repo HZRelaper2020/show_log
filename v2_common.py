@@ -131,7 +131,7 @@ class StructA1():
 
 class StructA3():
     def __init__(self,data,stype="A3"):
-        if len(data) != 332:
+        if len(data) != 328:
             logging.error("c3 data len failed %d",len(data))
             exit_app(0)
         
@@ -280,7 +280,7 @@ def read_structs(data,curpos,lista1,listc1,listc2,lista2=None,lista3=None,lista4
         structcount = get_struct_count(structtype,to_uint(data[curlen+2:curlen+4],2))
         totlen = get_struct_totlen(structtype,to_uint(data[curlen+2:curlen+4],2))              
         structlen = totlen//structcount
-        
+        #print("%02x structcount %d totlen:%d,structlen:%d"%(structtype,structcount,totlen,structlen))
         cur = curlen + 4        
         for i in range(0,structcount):
             dev = None
