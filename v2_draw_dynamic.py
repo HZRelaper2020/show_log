@@ -55,6 +55,8 @@ def plot_data(data):
         start = 0
         for unit in lista3:
             for i,dx in enumerate(unit.delta_vx):            
+                if dx == 0xfe:
+                    continue
                 t.append(start)
                 start += 1
                 x.append(dx-127)
