@@ -63,7 +63,7 @@ def plot_data(data):
         
         plt.figure(2)
         # plt.subplot(1,2,2)
-        #plt.clf()
+        plt.clf()
         # print(t)
         plt.plot(t,x,label="x")        
     
