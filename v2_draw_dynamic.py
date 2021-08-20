@@ -10,6 +10,21 @@ import _thread
 plot_x_start = 0
 plot_tmp_count =  0
 
+def collision_plot(ldata):
+    if ldata:
+        t = []
+        x = []
+        start = 0
+        for unit in ldata:
+            for i,dx in enumerate(unit.delta_vx):            
+                if dx == 0xfe:
+                    continue
+                t.append(start)
+                start += 1
+                x.append(dx-127)
+                    
+        plt.plot(t,x,label="x")
+        
 def plot_data(data):
     global plot_x_start
     global plot_tmp_count
@@ -41,32 +56,33 @@ def plot_data(data):
     
     plt.figure(1)
     # plt.subplot(1,2,1)
+    plt.title("3 zhou x,y")
     if plot_tmp_count > max_number:
         plot_tmp_count = 0
         plt.clf()
         
     plt.ylim(-30,30)
     plt.plot(t,x,label="x")
-    plt.plot(t,y,label= "y")
+    plt.plot(t,y,label= "y")    
     
-    if lista3:
-        t = []
-        x = []
-        start = 0
-        for unit in lista3:
-            for i,dx in enumerate(unit.delta_vx):            
-                if dx == 0xfe:
-                    continue
-                t.append(start)
-                start += 1
-                x.append(dx-127)
+    # draw pic
+    plt.figure(2)
         
-        plt.figure(2)
-        # plt.subplot(1,2,2)
-        plt.clf()
-        # print(t)
-        plt.plot(t,x,label="x")        
     
+    if lista2:
+        # plt.subplot(1,3,1).set_title("a2")
+        plt.title("a2")
+        collision_plot(lista2)
+    elif lista3:
+        plt.title("a3")
+        # plt.subplot(1,3,2).set_title("a3")
+        collision_plot(lista3)
+    elif lista4:
+        plt.title("a4")
+        # plt.subplot(1,3,3).set_title("a4")
+        collision_plot(lista4)
+    
+        
     util.save_file(lista1,"a+")
     util.save_file(listc2,"a+")
     util.save_file(lista2,"a+")
@@ -101,6 +117,8 @@ def draw_dynamic(filename):
         serialno = 0
         
         setting_ignore_serail_no = 0
+        
+        jump_serilano = 0
         if os.stat(filename).st_mtime != mtime:
             mtime = os.stat(filename).st_mtime
             fd = open(filename,encoding='gbk')
@@ -116,14 +134,23 @@ def draw_dynamic(filename):
                     new_serialno = int(re.search("\d+",serialtxt)[0])                                        
                     if serialno == 0:
                         serialno = new_serialno
-                    else:                        
-                        if serialno + 1 != new_serialno:
-                            logging.error("serail number wrong before %d after %d",serialno,new_serialno)
-                            ldata.clear()
-                            util.exit_app(0)
+                    else:
+                        if jump_serilano == new_serialno:                            
+                            serialno = new_serialno        
+                            jump_serilano = 0
                         else:
-                            serialno = new_serialno                                   
-                            
+                            if serialno + 1 != new_serialno:
+                                if jump_serilano:
+                                    logging.error("serail number wrong before %d after %d",jump_serilano -1,jump_serilano +1)
+                                    ldata.clear()
+                                    util.exit_app(0)
+                                else:
+                                    jump_serilano = serialno + 1                            
+                                    serialno = new_serialno
+                            else:
+                                serialno = new_serialno                                   
+                    
+                    
                     if line.find("[0x0900]") > -1:                   
                         bdtxt = re.search("bodyLen\[(\d+)\]",line)[0]                    
                         bodylen = int(re.search("\d+",bdtxt)[0])                                                
@@ -190,7 +217,7 @@ def draw_dynamic(filename):
             
         plt.pause(0.01)
 
-# def main():
-    # draw_dynamic(sys.argv[1])
-    
-# main()
+def main():    
+    draw_dynamic(sys.argv[1])
+
+main()
