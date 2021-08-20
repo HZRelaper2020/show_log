@@ -66,9 +66,11 @@ def plot_data(data):
     plt.plot(t,y,label= "y")    
     
     # draw pic
-    plt.figure(2)
+    if lista2 or lista3 or lista4:
+        plt.figure(2)
+        plt.xlim(0,30)
+        plt.ylim(-128,128)
         
-    
     if lista2:
         # plt.subplot(1,3,1).set_title("a2")
         plt.title("a2")
