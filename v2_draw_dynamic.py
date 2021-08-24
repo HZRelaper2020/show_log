@@ -9,6 +9,7 @@ import _thread
 
 plot_x_start = 0
 plot_tmp_count =  0
+plot_speed_t = 0;
 
 def collision_plot(ldata):
     if ldata:
@@ -28,6 +29,8 @@ def collision_plot(ldata):
 def plot_data(data):
     global plot_x_start
     global plot_tmp_count
+    global plot_speed_t
+    
     data = bytes(data)
     curlen = 0
     
@@ -84,6 +87,18 @@ def plot_data(data):
         # plt.subplot(1,3,3).set_title("a4")
         collision_plot(lista4)
     
+    t.clear()
+    x.clear()
+    if listc2:
+        plt.figure(3)
+        for i,unit in enumerate(listc2):
+            plot_speed_t += 1
+            t.append(unit.time)
+            # t.append(plot_speed_t)
+            x.append(unit.speed)
+        plt.ylim(-10,200)
+        plt.title("gps speed km/h")
+        plt.plot(t,x,label="speed")
         
     util.save_file(lista1,"a+")
     util.save_file(listc2,"a+")
