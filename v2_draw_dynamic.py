@@ -10,6 +10,8 @@ import _thread
 plot_x_start = 0
 plot_tmp_count =  0
 plot_speed_t = 0;
+plot_c2_t = []
+plot_c2_x = []
 
 def collision_plot(ldata):
     if ldata:
@@ -29,7 +31,10 @@ def collision_plot(ldata):
 def plot_data(data):
     global plot_x_start
     global plot_tmp_count
+    
     global plot_speed_t
+    global plot_c2_t
+    global plot_c2_x
     
     data = bytes(data)
     curlen = 0
@@ -90,15 +95,19 @@ def plot_data(data):
     t.clear()
     x.clear()
     if listc2:
+        if len(plot_c2_t) > 500:
+            plot_c2_t.clear()
+            plot_c2_x.clear()
+            
         plt.figure(3)
         for i,unit in enumerate(listc2):
             plot_speed_t += 1
-            t.append(unit.time)
-            # t.append(plot_speed_t)
-            x.append(unit.speed)
-        plt.ylim(-10,200)
+            # t.append(unit.time)
+            plot_c2_t.append(plot_speed_t)
+            plot_c2_x.append(unit.speed)        
         plt.title("gps speed km/h")
-        plt.plot(t,x,label="speed")
+        plt.cla()
+        plt.plot(plot_c2_t,plot_c2_x,label="speed")
         
     util.save_file(lista1,"a+")
     util.save_file(listc2,"a+")
