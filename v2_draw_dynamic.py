@@ -246,4 +246,4 @@ def draw_dynamic(filename):
 def main():    
     draw_dynamic(sys.argv[1])
 
-main()
+#main()
