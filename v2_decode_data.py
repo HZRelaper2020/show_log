@@ -34,7 +34,7 @@ def main():
             pkgnumber = newnumber
         else:
             if (pkgnumber != newnumber -1):
-                logging.error("pkgnum failed %d %d 0x%x",pkgnum,newnumber,curpos)
+                logging.error("pkgnum failed %d %d 0x%x",pkgnumber,newnumber,curpos)
                 exit(1)
             pkgnumber = newnumber
         # check RepoEDR
