@@ -131,7 +131,7 @@ class StructA1():
 
 class StructA3():
     def __init__(self,data,stype="A3"):
-        if len(data) != 328:
+        if len(data) != 332:
             logging.error("c3 data len failed %d",len(data))
             exit_app(0)
         
