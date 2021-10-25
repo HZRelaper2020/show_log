@@ -5,7 +5,10 @@
     * 保存文件名会打印出来
 * 画图   py v2_draw_data.py 解析出来的文件
 * 实时数据传输 py v2_draw_dynamic_script.py log文件
-
+* 解析txt
+	*  py v2_draw_data.py struct_A1.txt
+	*  py v2_draw_data_col.py struct_A3.txt
+	*  修改数据都在 self_process_data 函数里面
 <br/><br/><br/><br/>
 
 ### jtt808开头的都是关于jtt808协议的

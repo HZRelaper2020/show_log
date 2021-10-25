@@ -4,6 +4,13 @@ import struct
 import logging
 import matplotlib.pyplot as plt
 
+def self_process_data(line):
+    ret = True
+    if int(line[1]) == 0:
+        ret = False
+        
+    return ret
+    
 def main():
     if len(sys.argv) < 2:
         logging.error("please input file")
@@ -24,8 +31,9 @@ def main():
             break
         line = line.split()
         
-        for i in range(0,len(params)):
-            lvalue[params[i]].append(float(line[i]))
+        if self_process_data(line):
+            for i in range(0,len(params)):
+                lvalue[params[i]].append(float(line[i]))
             
     fd.close()
     
