@@ -155,6 +155,9 @@ class StructA3():
         self.t_max_delta_vxy2 = to_uint(data[325:326],1)
         self.t_flag_clip_x = to_uint(data[326:327],1)
         self.t_flag_clip_y = to_uint(data[327:328],1)
+        self.record_ok = to_uint(data[328:329],1)
+        self.event_itv = to_uint(data[329:330],1)
+        self.rtc_sync_ms = to_uint(data[330:332],2)
         
     def to_string(self,hasattribute=0):
         if hasattribute:
@@ -183,6 +186,9 @@ class StructA3():
             totc +="\n" + "t_max_delta_vxy2 0x%x \n"%self.t_max_delta_vxy2
             totc +="\n" + "t_flag_clip_x 0x%x \n"%self.t_flag_clip_x
             totc +="\n" + "t_flag_clip_y 0x%x \n"%self.t_flag_clip_y
+            totc +="\n" + "record_ok 0x%x \n"%self.record_ok
+            totc +="\n" + "event_itv 0x%x \n"%self.event_itv
+            totc +="\n" + "rtc_sync_ms 0x%x \n"%self.rtc_sync_ms
             
             totc += "next struct......................................................\n"
             return totc
